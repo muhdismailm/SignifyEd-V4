@@ -366,11 +366,12 @@ def process_text():
         result = process_text_pipeline(input_text)
 
         # Combine keypoints for avatar animation
-        sentence_file, missing = combine_sentence_keypoints(result["isl_gloss"])
+        combined_file, missing = combine_sentence_keypoints(result["isl_gloss"])
 
         return jsonify({
             **result,
-            "sentence_keypoints_file": sentence_file,
+            "sentence_keypoints_file": combined_file,
+            "combined_keypoints_url": f"http://localhost:5000/combined_keypoints/{combined_file}",
             "missing_glosses": missing
         })
 
@@ -404,6 +405,7 @@ def seq2seq_process():
             "gloss_file": gloss_file,
             "combined_keypoints_file": combined_file,
             "missing_glosses": missing,
+            "combined_keypoints_url": f"http://localhost:5000/combined_keypoints/{combined_file}",
             "model": "seq2seq_lstm"
         })
 
@@ -454,13 +456,30 @@ def upload_video():
             "gloss_file": gloss_file,
             "combined_keypoints_file": combined_file,
             "missing_glosses": missing,
+            "combined_keypoints_url": f"http://localhost:5000/combined_keypoints/{combined_file}",
             "model": "video_rule_based"
         })
 
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    
 
+@app.route("/combined_keypoints/<filename>")
+def get_combined_keypoints(filename):
+    try:
+        file_path = os.path.join(COMBINED_KEYPOINT_FOLDER, filename)
+
+        if not os.path.exists(file_path):
+            return jsonify({"error": "File not found"}), 404
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        return jsonify(data)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # ------------------ MAIN ------------------
 

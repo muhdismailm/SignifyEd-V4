@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "baseline-browser-mapping": "^2.10.0",
     "caniuse-lite": "^1.0.30001774",
     "lucide-react": "^0.344.0",

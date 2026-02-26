@@ -3,10 +3,7 @@ import {
   Menu,
   Play,
   ChevronRight,
-  Users,
   BookOpen,
-  Award,
-  Zap,
   Mic,
   Video,
   Cpu
@@ -17,7 +14,7 @@ function App() {
   const [showDemo, setShowDemo] = React.useState(false);
 
   if (showDemo) {
-    return <DemoPage onBack={() => setShowDemo(false)} />;
+    return <DemoPage onBack={() => setShowDemo(false)} backendUrl={''} />;
   }
 
   return (

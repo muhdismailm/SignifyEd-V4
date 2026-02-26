@@ -32,6 +32,7 @@ export default function DemoPage({ onBack }: DemoPageProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [gloss, setGloss] = useState<string[]>([]);
+  const [keypoints, setKeypoints] = useState<any[]>([]);
 
   /* TEXT TO ISL */
   const handleSendMessage = async () => {
@@ -51,11 +52,17 @@ export default function DemoPage({ onBack }: DemoPageProps) {
       const data = await res.json();
 
       if (data.error) {
-        setTranscript(data.error);
-      } else {
-        setTranscript(data.original);
-        setGloss(data.isl_gloss || []);
-      }
+  setTranscript(data.error);
+} else {
+  setTranscript(data.original);
+  setGloss(data.isl_gloss || []);
+
+  if (data.combined_keypoints_url) {
+    const res2 = await fetch(data.combined_keypoints_url);
+    const kpData = await res2.json();
+    setKeypoints(kpData.sentence_keypoints || []);
+  }
+}
 
     } catch {
       setTranscript('Error processing request.');
@@ -91,11 +98,17 @@ export default function DemoPage({ onBack }: DemoPageProps) {
         const data = await res.json();
 
         if (data.error) {
-          setTranscript(data.error);
-        } else {
-          setTranscript(data.transcript);
-          setGloss(data.isl_gloss || []);
-        }
+  setTranscript(data.error);
+} else {
+  setTranscript(data.transcript);
+  setGloss(data.isl_gloss || []);
+
+  if (data.combined_keypoints_url) {
+    const res2 = await fetch(data.combined_keypoints_url);
+    const kpData = await res2.json();
+    setKeypoints(kpData.sentence_keypoints || []);
+  }
+}
 
       } catch {
         setTranscript('Video upload failed.');
@@ -256,7 +269,7 @@ export default function DemoPage({ onBack }: DemoPageProps) {
 
       {/* RIGHT PANEL */}
           <div className="bg-slate-900/60 border border-slate-700 rounded-2xl p-6">
-            <AvatarViewer />
+            <AvatarViewer keypoints={keypoints} />
           </div>
 
         </div>
