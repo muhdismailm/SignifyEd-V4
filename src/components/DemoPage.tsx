@@ -7,6 +7,7 @@ import {
   BookOpen,
   Menu
 } from 'lucide-react';
+import AvatarViewer from "./AvatarViewer";
 
 declare global {
   interface Window {
@@ -253,13 +254,9 @@ export default function DemoPage({ onBack }: DemoPageProps) {
 
           </div>
 
-          {/* RIGHT PANEL */}
-          <div className="bg-slate-900/60 border border-slate-700 rounded-2xl p-6 flex items-center justify-center">
-            <div className="text-center text-slate-400">
-              🎬 Avatar Rendering Module
-              <br />
-              (3D ISL Animation Integration)
-            </div>
+      {/* RIGHT PANEL */}
+          <div className="bg-slate-900/60 border border-slate-700 rounded-2xl p-6">
+            <AvatarViewer />
           </div>
 
         </div>

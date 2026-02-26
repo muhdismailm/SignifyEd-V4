@@ -9,6 +9,9 @@ from seq2seq.inference import generate_gloss
 import csv
 import os
 import traceback
+import json
+import uuid
+from datetime import datetime
 
 # ------------------ INIT ------------------
 
@@ -21,35 +24,36 @@ print("FLASK RUNNING FROM:", BASE_DIR)
 # ------------------ SAFE NLTK DOWNLOADS ------------------
 
 def ensure_nltk():
-    try:
-        nltk.data.find("corpora/stopwords")
-    except:
-        nltk.download("stopwords")
+    resources = [
+        "corpora/stopwords",
+        "corpora/wordnet",
+        "tokenizers/punkt",
+        "taggers/averaged_perceptron_tagger"
+    ]
 
-    try:
-        nltk.data.find("corpora/wordnet")
-    except:
-        nltk.download("wordnet")
-
-    try:
-        nltk.data.find("tokenizers/punkt")
-    except:
-        nltk.download("punkt")
-
-    try:
-        nltk.data.find("taggers/averaged_perceptron_tagger")
-    except:
-        nltk.download("averaged_perceptron_tagger")
+    for resource in resources:
+        try:
+            nltk.data.find(resource)
+        except:
+            nltk.download(resource.split("/")[-1])
 
 ensure_nltk()
 
-# ------------------ UPLOAD CONFIG ------------------
+# ------------------ FOLDERS ------------------
 
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads", "videos")
+GLOSS_FOLDER = os.path.join(BASE_DIR, "generated_gloss")
+KEYPOINT_SOURCE_FOLDER = os.path.join(BASE_DIR, "processed_keypoints")
+COMBINED_KEYPOINT_FOLDER = os.path.join(BASE_DIR, "combined_keypoints")
+DATASET_FILE = os.path.join(BASE_DIR, "isl_dataset.csv")
+
 ALLOWED_EXTENSIONS = {"mp4", "avi", "mov", "mkv"}
 
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(GLOSS_FOLDER, exist_ok=True)
+os.makedirs(COMBINED_KEYPOINT_FOLDER, exist_ok=True)
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # ------------------ NLP SETUP ------------------
 
@@ -66,14 +70,12 @@ isl_mapping = {
     "go": "GO",
     "school": "SCHOOL",
     "today": "TODAY",
-    "tommorow": "TOMMOROW",
+    "tomorrow": "TOMORROW",
     "hello": "HELLO",
     "you": "YOU"
 }
 
-DATASET_FILE = os.path.join(BASE_DIR, "isl_dataset.csv")
-
-# ------------------ HELPERS ------------------
+# ------------------ HELPER FUNCTIONS ------------------
 
 def allowed_file(filename):
     return "." in filename and \
@@ -87,6 +89,128 @@ def save_to_dataset(input_text, isl_gloss):
         if not file_exists:
             writer.writerow(["input_text", "isl_gloss"])
         writer.writerow([input_text, " ".join(isl_gloss)])
+
+
+def save_gloss_to_file(original_text, isl_gloss):
+    file_id = str(uuid.uuid4())[:8]
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    filename = f"gloss_{timestamp}_{file_id}.json"
+    file_path = os.path.join(GLOSS_FOLDER, filename)
+
+    data = {
+        "original_text": original_text,
+        "isl_gloss": isl_gloss,
+        "created_at": timestamp
+    }
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+
+    return filename
+
+def combine_sentence_keypoints(isl_gloss):
+    """
+    Combine keypoints from:
+    processed_keypoints/GLOSS_NAME/*.json
+    into one continuous animation file.
+    """
+
+    KEYPOINT_SOURCE_FOLDER = os.path.join(BASE_DIR, "processed_keypoints")
+    COMBINED_FOLDER = COMBINED_KEYPOINT_FOLDER
+
+    os.makedirs(COMBINED_FOLDER, exist_ok=True)
+
+    combined_keypoints = []
+    missing_glosses = []
+
+    current_frame_offset = 0
+    total_frames = 0
+
+    for gloss in isl_gloss:
+
+        gloss_folder = os.path.join(KEYPOINT_SOURCE_FOLDER, gloss.upper())
+
+        if not os.path.exists(gloss_folder):
+            missing_glosses.append(gloss)
+            continue
+
+        json_files = [
+            f for f in os.listdir(gloss_folder)
+            if f.endswith(".json")
+        ]
+
+        if not json_files:
+            missing_glosses.append(gloss)
+            continue
+
+        # Always pick first file (can randomize later)
+        json_path = os.path.join(gloss_folder, json_files[0])
+
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:
+            print(f"Error reading {json_path}: {e}")
+            missing_glosses.append(gloss)
+            continue
+
+        # 🔥 Handle both JSON formats safely
+        if isinstance(data, list):
+            word_keypoints = data
+        elif isinstance(data, dict):
+            word_keypoints = (
+                data.get("keypoints") or
+                data.get("frames") or
+                []
+            )
+        else:
+            word_keypoints = []
+
+        if not word_keypoints:
+            missing_glosses.append(gloss)
+            continue
+
+        word_total_frames = len(word_keypoints)
+
+        # Adjust frame numbering to make animation continuous
+        for i, frame_data in enumerate(word_keypoints):
+
+            # Ensure frame_data is dict
+            if not isinstance(frame_data, dict):
+                continue
+
+            adjusted_frame = frame_data.copy()
+
+            # Maintain continuous timeline
+            adjusted_frame["frame"] = current_frame_offset + i
+
+            combined_keypoints.append(adjusted_frame)
+
+        current_frame_offset += word_total_frames
+        total_frames += word_total_frames
+
+    # Generate output file
+    file_id = str(uuid.uuid4())[:8]
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    filename = f"sentence_{timestamp}_{file_id}.json"
+    filepath = os.path.join(COMBINED_FOLDER, filename)
+
+    output_data = {
+        "gloss_sequence": isl_gloss,
+        "total_frames": total_frames,
+        "sentence_keypoints": combined_keypoints,
+        "missing_glosses": missing_glosses,
+        "created_at": timestamp
+    }
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(output_data, f, indent=4)
+
+    return filename, missing_glosses
+
+
 
 
 def get_wordnet_pos(tag):
@@ -112,7 +236,7 @@ def reorder_for_isl(lemmatized_tokens, pos_tags):
     for i, (word, tag) in enumerate(pos_tags):
         lemma = lemmatized_tokens[i]
 
-        if lemma.lower() in ["today", "tommorow", "yesterday"]:
+        if lemma.lower() in ["today", "tomorrow", "yesterday"]:
             time_words.append(lemma)
         elif tag.startswith("V"):
             verb_words.append(lemma)
@@ -124,11 +248,7 @@ def reorder_for_isl(lemmatized_tokens, pos_tags):
 
     return time_words + obj_words + verb_words + negation
 
-
-# ------------------ RULE-BASED NLP PIPELINE ------------------
-
 def process_text_pipeline(input_text):
-
     input_text = input_text.lower()
     tokens = nltk.word_tokenize(input_text)
 
@@ -155,12 +275,77 @@ def process_text_pipeline(input_text):
         "processed_tokens": lemmatized_tokens,
         "isl_gloss": isl_gloss
     }
+# ------------------ COMBINE SENTENCE KEYPOINTS ------------------
 
+# def combine_sentence_keypoints(isl_gloss):
+#     """
+#     Combine keypoints from:
+#     processed_keypoints/GLOSS_NAME/*.json
+#     into one sentence-level keypoints file
+#     """
+
+#     KEYPOINT_SOURCE_FOLDER = os.path.join(BASE_DIR, "processed_keypoints")
+#     COMBINED_FOLDER = os.path.join(BASE_DIR, "combined_sentence_keypoints")
+
+#     os.makedirs(COMBINED_FOLDER, exist_ok=True)
+
+#     combined_keypoints = []
+#     missing_glosses = []
+
+#     for gloss in isl_gloss:
+
+#         gloss_folder = os.path.join(KEYPOINT_SOURCE_FOLDER, gloss.upper())
+
+#         if not os.path.exists(gloss_folder):
+#             missing_glosses.append(gloss)
+#             continue
+
+#         json_files = [
+#             f for f in os.listdir(gloss_folder)
+#             if f.endswith(".json")
+#         ]
+
+#         if not json_files:
+#             missing_glosses.append(gloss)
+#             continue
+
+#         json_path = os.path.join(gloss_folder, json_files[0])
+
+#         with open(json_path, "r", encoding="utf-8") as f:
+#             data = json.load(f)
+
+#             word_keypoints = (
+#                 data.get("keypoints") or
+#                 data.get("frames") or
+#                 []
+#             )
+
+#             combined_keypoints.extend(word_keypoints)
+
+#     # Save combined sentence file
+#     file_id = str(uuid.uuid4())[:8]
+#     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+#     filename = f"sentence_{timestamp}_{file_id}.json"
+#     filepath = os.path.join(COMBINED_FOLDER, filename)
+
+#     output_data = {
+#         "gloss_sequence": isl_gloss,
+#         "total_frames": len(combined_keypoints),
+#         "sentence_keypoints": combined_keypoints,
+#         "missing_glosses": missing_glosses,
+#         "created_at": timestamp
+#     }
+
+#     with open(filepath, "w", encoding="utf-8") as f:
+#         json.dump(output_data, f, indent=4)
+
+#     return filename, missing_glosses
 # ------------------ ROUTES ------------------
 
 @app.route("/")
 def home():
-    return "SignifyEd Backend Running Successfully"
+    return "Signify Backend Running Successfully"
 
 
 # -------- RULE-BASED TEXT → ISL --------
@@ -179,14 +364,19 @@ def process_text():
             return jsonify({"error": "Empty input text"}), 400
 
         result = process_text_pipeline(input_text)
-        save_to_dataset(input_text, result["isl_gloss"])
 
-        return jsonify(result)
+        # Combine keypoints for avatar animation
+        sentence_file, missing = combine_sentence_keypoints(result["isl_gloss"])
+
+        return jsonify({
+            **result,
+            "sentence_keypoints_file": sentence_file,
+            "missing_glosses": missing
+        })
 
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
 
 # -------- SEQ2SEQ TEXT → ISL --------
 
@@ -205,9 +395,15 @@ def seq2seq_process():
 
         gloss = generate_gloss(input_text)
 
+        gloss_file = save_gloss_to_file(input_text, gloss)
+        combined_file, missing = combine_sentence_keypoints(gloss)
+
         return jsonify({
             "original": input_text,
             "isl_gloss": gloss,
+            "gloss_file": gloss_file,
+            "combined_keypoints_file": combined_file,
+            "missing_glosses": missing,
             "model": "seq2seq_lstm"
         })
 
@@ -250,38 +446,15 @@ def upload_video():
 
         result = process_text_pipeline(transcript)
 
+        gloss_file = save_gloss_to_file(transcript, result["isl_gloss"])
+        combined_file, missing = combine_sentence_keypoints(result["isl_gloss"])
         return jsonify({
             "transcript": transcript,
-            "processed_tokens": result["processed_tokens"],
             "isl_gloss": result["isl_gloss"],
-            "model": "rule_based"
-        })
-
-    except Exception as e:
-        traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
-
-
-# -------- TOKEN → GLOSS --------
-
-@app.route("/to_gloss", methods=["POST"])
-def to_gloss():
-    try:
-        data = request.get_json(silent=True)
-
-        if not data or "tokens" not in data:
-            return jsonify({"error": "Tokens missing"}), 400
-
-        tokens = data.get("tokens", [])
-
-        gloss = [
-            isl_mapping.get(token.lower(), token.upper())
-            for token in tokens
-        ]
-
-        return jsonify({
-            "tokens": tokens,
-            "gloss": gloss
+            "gloss_file": gloss_file,
+            "combined_keypoints_file": combined_file,
+            "missing_glosses": missing,
+            "model": "video_rule_based"
         })
 
     except Exception as e:
