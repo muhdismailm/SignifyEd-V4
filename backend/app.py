@@ -112,7 +112,7 @@ def save_gloss_to_file(original_text, isl_gloss):
 def combine_sentence_keypoints(isl_gloss):
     """
     Combine keypoints from:
-    processed_keypoints/GLOSS_NAME/*.json
+    processed_keypoints/GLOSS_NAME.json
     into one continuous animation file.
     """
 
@@ -129,23 +129,14 @@ def combine_sentence_keypoints(isl_gloss):
 
     for gloss in isl_gloss:
 
-        gloss_folder = os.path.join(KEYPOINT_SOURCE_FOLDER, gloss.upper())
+        json_path = os.path.join(
+            KEYPOINT_SOURCE_FOLDER,
+            f"{gloss.upper()}.json"
+        )
 
-        if not os.path.exists(gloss_folder):
+        if not os.path.exists(json_path):
             missing_glosses.append(gloss)
             continue
-
-        json_files = [
-            f for f in os.listdir(gloss_folder)
-            if f.endswith(".json")
-        ]
-
-        if not json_files:
-            missing_glosses.append(gloss)
-            continue
-
-        # Always pick first file (can randomize later)
-        json_path = os.path.join(gloss_folder, json_files[0])
 
         try:
             with open(json_path, "r", encoding="utf-8") as f:
@@ -155,7 +146,7 @@ def combine_sentence_keypoints(isl_gloss):
             missing_glosses.append(gloss)
             continue
 
-        # 🔥 Handle both JSON formats safely
+        # Handle both JSON formats safely
         if isinstance(data, list):
             word_keypoints = data
         elif isinstance(data, dict):
@@ -173,16 +164,13 @@ def combine_sentence_keypoints(isl_gloss):
 
         word_total_frames = len(word_keypoints)
 
-        # Adjust frame numbering to make animation continuous
+        # Maintain continuous timeline
         for i, frame_data in enumerate(word_keypoints):
 
-            # Ensure frame_data is dict
             if not isinstance(frame_data, dict):
                 continue
 
             adjusted_frame = frame_data.copy()
-
-            # Maintain continuous timeline
             adjusted_frame["frame"] = current_frame_offset + i
 
             combined_keypoints.append(adjusted_frame)

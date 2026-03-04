@@ -1,0 +1,99 @@
+import cv2
+import mediapipe as mp
+import numpy as np
+import json
+import os
+
+# =============================
+# CONFIG
+# =============================
+
+INPUT_FOLDER = r"C:\Users\Ismail M\Desktop\Main project\SignifyEd\backend\clips"
+OUTPUT_FOLDER = r"C:\Users\Ismail M\Desktop\processed_keypoints_1"
+
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+# =============================
+# MEDIAPIPE INIT
+# =============================
+
+mp_holistic = mp.solutions.holistic
+holistic = mp_holistic.Holistic(
+    static_image_mode=False,
+    model_complexity=2,
+    smooth_landmarks=True,
+    refine_face_landmarks=True
+)
+
+# =============================
+# HELPER
+# =============================
+
+def vec(a, b):
+    v = np.array([b.x - a.x, b.y - a.y, b.z - a.z])
+    norm = np.linalg.norm(v)
+    if norm == 0:
+        return [0, 0, 0]
+    return (v / norm).tolist()
+
+# =============================
+# PROCESS SINGLE VIDEO
+# =============================
+
+def process_video(video_path, output_path):
+
+    cap = cv2.VideoCapture(video_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+
+    frames_output = []
+    frame_id = 0
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = holistic.process(image)
+
+        frame_data = {"frame": frame_id, "bones": {}}
+
+        if results.pose_landmarks:
+            pose = results.pose_landmarks.landmark
+            frame_data["bones"]["LeftArm"] = vec(pose[11], pose[13])
+            frame_data["bones"]["LeftForeArm"] = vec(pose[13], pose[15])
+            frame_data["bones"]["RightArm"] = vec(pose[12], pose[14])
+            frame_data["bones"]["RightForeArm"] = vec(pose[14], pose[16])
+
+        if results.left_hand_landmarks:
+            lh = results.left_hand_landmarks.landmark
+            frame_data["bones"]["LeftHand"] = vec(lh[0], lh[9])
+
+        if results.right_hand_landmarks:
+            rh = results.right_hand_landmarks.landmark
+            frame_data["bones"]["RightHand"] = vec(rh[0], rh[9])
+
+        frames_output.append(frame_data)
+        frame_id += 1
+
+    cap.release()
+
+    with open(output_path, "w") as f:
+        json.dump({"fps": fps, "frames": frames_output}, f, indent=2)
+
+# =============================
+# BATCH PROCESS
+# =============================
+
+videos = [f for f in os.listdir(INPUT_FOLDER)
+          if f.lower().endswith((".mp4", ".avi", ".mov"))]
+
+for video in videos:
+    video_path = os.path.join(INPUT_FOLDER, video)
+    output_name = os.path.splitext(video)[0] + ".json"
+    output_path = os.path.join(OUTPUT_FOLDER, output_name)
+
+    print(f"Processing {video}...")
+    process_video(video_path, output_path)
+
+print("✅ All videos processed.")
