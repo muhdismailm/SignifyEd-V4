@@ -731,4 +731,6 @@ export default function AvatarViewer({ keypoints, fps = 25 }: Props) {
       </Canvas>
     </>
   );
+  console.log("Keypoints length:", keypoints?.length);
+console.log("First frame:", keypoints?.[0]);
 }
