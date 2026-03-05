@@ -1,237 +1,8 @@
 
-// // import { Canvas, useFrame } from "@react-three/fiber";
-// // import { useGLTF } from "@react-three/drei";
-// // import { useEffect, useRef } from "react";
-// // import * as THREE from "three";
-
-// // interface Props {
-// //   keypoints: any[];
-// //   fps?: number;
-// // }
-
-// // const CC4_BONES = {
-// //   hip:        "CC_Base_Hip_03",
-// //   waist:      "CC_Base_Waist_035",
-// //   spine1:     "CC_Base_Spine01_036",
-// //   spine2:     "CC_Base_Spine02_037",
-// //   neck1:      "CC_Base_NeckTwist01_038",
-// //   neck2:      "CC_Base_NeckTwist02_039",
-// //   head:       "CC_Base_Head_040",
-// //   l_clavicle: "CC_Base_L_Clavicle_051",
-// //   l_upperarm: "CC_Base_L_Upperarm_052",
-// //   l_forearm:  "CC_Base_L_Forearm_053",
-// //   l_hand:     "CC_Base_L_Hand_057",
-// //   l_thumb1:   "CC_Base_L_Thumb1_070",
-// //   l_thumb2:   "CC_Base_L_Thumb2_071",
-// //   l_thumb3:   "CC_Base_L_Thumb3_072",
-// //   l_index1:   "CC_Base_L_Index1_067",
-// //   l_index2:   "CC_Base_L_Index2_068",
-// //   l_index3:   "CC_Base_L_Index3_069",
-// //   l_mid1:     "CC_Base_L_Mid1_064",
-// //   l_mid2:     "CC_Base_L_Mid2_065",
-// //   l_mid3:     "CC_Base_L_Mid3_066",
-// //   l_ring1:    "CC_Base_L_Ring1_061",
-// //   l_ring2:    "CC_Base_L_Ring2_062",
-// //   l_ring3:    "CC_Base_L_Ring3_063",
-// //   l_pinky1:   "CC_Base_L_Pinky1_058",
-// //   l_pinky2:   "CC_Base_L_Pinky2_059",
-// //   l_pinky3:   "CC_Base_L_Pinky3_060",
-// //   r_clavicle: "CC_Base_R_Clavicle_079",
-// //   r_upperarm: "CC_Base_R_Upperarm_080",
-// //   r_forearm:  "CC_Base_R_Forearm_081",
-// //   r_hand:     "CC_Base_R_Hand_085",
-// //   r_thumb1:   "CC_Base_R_Thumb1_092",
-// //   r_thumb2:   "CC_Base_R_Thumb2_093",
-// //   r_thumb3:   "CC_Base_R_Thumb3_094",
-// //   r_index1:   "CC_Base_R_Index1_095",
-// //   r_index2:   "CC_Base_R_Index2_096",
-// //   r_index3:   "CC_Base_R_Index3_097",
-// //   r_mid1:     "CC_Base_R_Mid1_089",
-// //   r_mid2:     "CC_Base_R_Mid2_090",
-// //   r_mid3:     "CC_Base_R_Mid3_091",
-// //   r_ring1:    "CC_Base_R_Ring1_086",
-// //   r_ring2:    "CC_Base_R_Ring2_087",
-// //   r_ring3:    "CC_Base_R_Ring3_088",
-// //   r_pinky1:   "CC_Base_R_Pinky1_00",
-// //   r_pinky2:   "CC_Base_R_Pinky2_01",
-// //   r_pinky3:   "CC_Base_R_Pinky3_098",
-// // } as const;
-
-// // // ─── Coordinate conversion ────────────────────────────────────────────────────
-// // // MediaPipe: x=0 left→1 right, y=0 top→1 bottom, z depth into screen
-// // // Three.js:  x right, y up, z toward camera
-// // // The avatar group has rotation [0.5, 0, -3.2] so we match that orientation.
-// // // DO NOT negate X — negating it caused the backward flip.
-// // function mpToWorld(p: number[]): THREE.Vector3 {
-// //   return new THREE.Vector3(
-// //     p[0] - 0.5,   // centre around 0, no flip
-// //     0.5 - p[1],   // flip Y (MediaPipe y-down → Three y-up)
-// //     -p[2]
-// //   );
-// // }
-
-// // function mpDir(a: number[], b: number[]): THREE.Vector3 {
-// //   return mpToWorld(b).sub(mpToWorld(a)).normalize();
-// // }
-
-// // function midpoint(a: number[], b: number[]): number[] {
-// //   return a.map((v, i) => (v + b[i]) / 2);
-// // }
-
-// // // ─── Animated Avatar ──────────────────────────────────────────────────────────
-// // function AnimatedAvatar({ keypoints, fps = 25 }: Props) {
-// //   const { scene } = useGLTF("/avatar.glb");
-
-// //   const bones      = useRef<Record<string, THREE.Bone>>({});
-// //   const restDir    = useRef<Record<string, THREE.Vector3>>({});
-// //   const restLocalQ = useRef<Record<string, THREE.Quaternion>>({});
-
-// //   const frameIndex    = useRef(0);
-// //   const elapsed       = useRef(0);
-// //   const frameInterval = 1 / fps;
-
-// //   useEffect(() => {
-// //     scene.traverse((obj) => {
-// //       if (!(obj as THREE.Bone).isBone) return;
-// //       const bone = obj as THREE.Bone;
-// //       bones.current[bone.name] = bone;
-
-// //       // Freeze rest local quaternion once at load
-// //       restLocalQ.current[bone.name] = bone.quaternion.clone();
-
-// //       // World-space rest direction toward first child bone
-// //       const childBone = bone.children.find(
-// //         (c) => (c as THREE.Bone).isBone
-// //       ) as THREE.Object3D | undefined;
-
-// //       if (childBone) {
-// //         const bPos = new THREE.Vector3();
-// //         const cPos = new THREE.Vector3();
-// //         bone.getWorldPosition(bPos);
-// //         childBone.getWorldPosition(cPos);
-// //         restDir.current[bone.name] = cPos.sub(bPos).normalize();
-// //       }
-// //     });
-
-// //     console.group("🦴 CC4 Bone verification");
-// //     Object.entries(CC4_BONES).forEach(([key, name]) => {
-// //       if (bones.current[name]) console.log(`✅ ${key}: "${name}"`);
-// //       else console.warn(`❌ MISSING ${key}: "${name}"`);
-// //     });
-// //     console.groupEnd();
-// //   }, [scene]);
-
-// //   useEffect(() => {
-// //     frameIndex.current = 0;
-// //     elapsed.current = 0;
-// //   }, [keypoints]);
-
-// //   // ─── Core rotation ──────────────────────────────────────────────────────────
-// //   // Always rotate FROM the frozen rest quaternion, not from current bone state.
-// //   // Local-space conversion: localDelta = parentWorldInv * worldDelta
-// //   // (NOT the incorrect sandwich: parentWorldInv * worldDelta * parentWorld)
-// //   function rotateBoneToward(boneName: string, targetDir: THREE.Vector3, alpha = 0.35) {
-// //     const bone  = bones.current[boneName];
-// //     const rDir  = restDir.current[boneName];
-// //     const restQ = restLocalQ.current[boneName];
-// //     if (!bone || !rDir || !restQ || targetDir.lengthSq() < 0.001) return;
-
-// //     // World-space rotation: rest dir → target dir
-// //     const worldDelta = new THREE.Quaternion().setFromUnitVectors(rDir, targetDir);
-
-// //     // Convert to local space correctly: localDelta = inv(parentWorld) * worldDelta
-// //     const parentWorld = new THREE.Quaternion();
-// //     if (bone.parent) bone.parent.getWorldQuaternion(parentWorld);
-// //     const localDelta = parentWorld.clone().invert().multiply(worldDelta);
-
-// //     // Apply on top of frozen rest — prevents any accumulation
-// //     const targetQuat = restQ.clone().multiply(localDelta);
-// //     bone.quaternion.slerp(targetQuat, alpha);
-// //   }
-
-// //   // ─── Finger driving ─────────────────────────────────────────────────────────
-// //   function driveFinger(
-// //     lm: number[][],
-// //     mcpIdx: number, pipIdx: number, dipIdx: number, tipIdx: number,
-// //     b1: string, b2: string, b3: string,
-// //     alpha = 0.3
-// //   ) {
-// //     if (lm.length <= tipIdx) return;
-// //     rotateBoneToward(b1, mpDir(lm[mcpIdx], lm[pipIdx]), alpha);
-// //     rotateBoneToward(b2, mpDir(lm[pipIdx], lm[dipIdx]), alpha);
-// //     rotateBoneToward(b3, mpDir(lm[dipIdx], lm[tipIdx]), alpha);
-// //   }
-
-// //   function driveHand(hand: number[][], side: "l" | "r", alpha = 0.3) {
-// //     if (!hand || hand.length < 21) return;
-// //     const s = side;
-// //     rotateBoneToward(CC4_BONES[`${s}_hand`], mpDir(hand[0], midpoint(hand[5], hand[17])), alpha);
-// //     driveFinger(hand, 1,  2,  3,  4,  CC4_BONES[`${s}_thumb1`], CC4_BONES[`${s}_thumb2`], CC4_BONES[`${s}_thumb3`], alpha);
-// //     driveFinger(hand, 5,  6,  7,  8,  CC4_BONES[`${s}_index1`], CC4_BONES[`${s}_index2`], CC4_BONES[`${s}_index3`], alpha);
-// //     driveFinger(hand, 9,  10, 11, 12, CC4_BONES[`${s}_mid1`],   CC4_BONES[`${s}_mid2`],   CC4_BONES[`${s}_mid3`],   alpha);
-// //     driveFinger(hand, 13, 14, 15, 16, CC4_BONES[`${s}_ring1`],  CC4_BONES[`${s}_ring2`],  CC4_BONES[`${s}_ring3`],  alpha);
-// //     driveFinger(hand, 17, 18, 19, 20, CC4_BONES[`${s}_pinky1`], CC4_BONES[`${s}_pinky2`], CC4_BONES[`${s}_pinky3`], alpha);
-// //   }
-
-// //   // ─── Per-frame loop ──────────────────────────────────────────────────────────
-// //   useFrame((_, delta) => {
-// //     if (!keypoints?.length) return;
-
-// //     elapsed.current += Math.min(delta, 0.1);
-// //     if (elapsed.current >= frameInterval) {
-// //       elapsed.current = 0;
-// //       frameIndex.current = (frameIndex.current + 1) % keypoints.length;
-// //     }
-
-// //     const frame = keypoints[frameIndex.current];
-// //     if (!frame) return;
-
-// //     const pose      = frame.pose       as number[][] | undefined;
-// //     const leftHand  = frame.left_hand  as number[][] | undefined;
-// //     const rightHand = frame.right_hand as number[][] | undefined;
-
-// //     // Arms
-// //     if (pose && pose.length >= 17) {
-// //       rotateBoneToward(CC4_BONES.l_upperarm, mpDir(pose[11], pose[13]));
-// //       rotateBoneToward(CC4_BONES.l_forearm,  mpDir(pose[13], pose[15]));
-// //       rotateBoneToward(CC4_BONES.r_upperarm, mpDir(pose[12], pose[14]));
-// //       rotateBoneToward(CC4_BONES.r_forearm,  mpDir(pose[14], pose[16]));
-// //     }
-
-// //     // Hands + fingers
-// //     if (leftHand) {
-// //       driveHand(leftHand, "l");
-// //     } else if (pose && pose.length >= 22) {
-// //       rotateBoneToward(CC4_BONES.l_hand, mpDir(pose[15], midpoint(pose[17], pose[19])), 0.3);
-// //     }
-
-// //     if (rightHand) {
-// //       driveHand(rightHand, "r");
-// //     } else if (pose && pose.length >= 22) {
-// //       rotateBoneToward(CC4_BONES.r_hand, mpDir(pose[16], midpoint(pose[18], pose[20])), 0.3);
-// //     }
-// //   });
-
-// //   return (
-// //     <group rotation={[.5, 0, -3.2]} position={[0, -3, 0]}>
-// //       <primitive object={scene} scale={1.5} />
-// //     </group>
-// //   );
-// // }
-
-// // export default function AvatarViewer({ keypoints, fps = 25 }: Props) {
-// //   return (
-// //     <Canvas camera={{ position: [0, -5, -3], fov: 40 }}>
-// //       <ambientLight intensity={0.6} />
-// //       <directionalLight position={[2, 4, 3]} intensity={1.4} castShadow />
-// //       <AnimatedAvatar keypoints={keypoints} fps={fps} />
-// //     </Canvas>
-// //   );
-// // } 
 
 // import { Canvas, useFrame } from "@react-three/fiber";
 // import { useGLTF } from "@react-three/drei";
-// import { useEffect, useRef } from "react";
+// import { useEffect, useRef, useState, useCallback } from "react";
 // import * as THREE from "three";
 
 // interface Props {
@@ -239,125 +10,70 @@
 //   fps?: number;
 // }
 
-// // ─── Mixamo standard bone names ───────────────────────────────────────────────
+// /* ─────────────────────────────────────────────────────────────
+//    MIXAMO BONE MAP
+// ───────────────────────────────────────────────────────────── */
 // const BONES = {
-//   // Spine
-//   hips:       "Hips",
-//   spine:      "Spine",
-//   spine1:     "Spine1",
-//   spine2:     "Spine2",
-//   neck:       "Neck",
-//   head:       "Head",
-
-//   // Left arm
-//   l_shoulder: "LeftShoulder",
 //   l_upperarm: "LeftArm",
 //   l_forearm:  "LeftForeArm",
 //   l_hand:     "LeftHand",
-
-//   // Left fingers
-//   l_thumb1:   "LeftHandThumb1",
-//   l_thumb2:   "LeftHandThumb2",
-//   l_thumb3:   "LeftHandThumb3",
-//   l_index1:   "LeftHandIndex1",
-//   l_index2:   "LeftHandIndex2",
-//   l_index3:   "LeftHandIndex3",
-//   l_mid1:     "LeftHandMiddle1",
-//   l_mid2:     "LeftHandMiddle2",
-//   l_mid3:     "LeftHandMiddle3",
-//   l_ring1:    "LeftHandRing1",
-//   l_ring2:    "LeftHandRing2",
-//   l_ring3:    "LeftHandRing3",
-//   l_pinky1:   "LeftHandPinky1",
-//   l_pinky2:   "LeftHandPinky2",
-//   l_pinky3:   "LeftHandPinky3",
-
-//   // Right arm
-//   r_shoulder: "RightShoulder",
 //   r_upperarm: "RightArm",
 //   r_forearm:  "RightForeArm",
 //   r_hand:     "RightHand",
-
-//   // Right fingers
-//   r_thumb1:   "RightHandThumb1",
-//   r_thumb2:   "RightHandThumb2",
-//   r_thumb3:   "RightHandThumb3",
-//   r_index1:   "RightHandIndex1",
-//   r_index2:   "RightHandIndex2",
-//   r_index3:   "RightHandIndex3",
-//   r_mid1:     "RightHandMiddle1",
-//   r_mid2:     "RightHandMiddle2",
-//   r_mid3:     "RightHandMiddle3",
-//   r_ring1:    "RightHandRing1",
-//   r_ring2:    "RightHandRing2",
-//   r_ring3:    "RightHandRing3",
-//   r_pinky1:   "RightHandPinky1",
-//   r_pinky2:   "RightHandPinky2",
-//   r_pinky3:   "RightHandPinky3",
+//   l_thumb1: "LeftHandThumb1",  l_thumb2: "LeftHandThumb2",  l_thumb3: "LeftHandThumb3",
+//   l_index1: "LeftHandIndex1",  l_index2: "LeftHandIndex2",  l_index3: "LeftHandIndex3",
+//   l_mid1:   "LeftHandMiddle1", l_mid2:   "LeftHandMiddle2", l_mid3:   "LeftHandMiddle3",
+//   l_ring1:  "LeftHandRing1",   l_ring2:  "LeftHandRing2",   l_ring3:  "LeftHandRing3",
+//   l_pinky1: "LeftHandPinky1",  l_pinky2: "LeftHandPinky2",  l_pinky3: "LeftHandPinky3",
+//   r_thumb1: "RightHandThumb1", r_thumb2: "RightHandThumb2", r_thumb3: "RightHandThumb3",
+//   r_index1: "RightHandIndex1", r_index2: "RightHandIndex2", r_index3: "RightHandIndex3",
+//   r_mid1:   "RightHandMiddle1",r_mid2:   "RightHandMiddle2",r_mid3:   "RightHandMiddle3",
+//   r_ring1:  "RightHandRing1",  r_ring2:  "RightHandRing2",  r_ring3:  "RightHandRing3",
+//   r_pinky1: "RightHandPinky1", r_pinky2: "RightHandPinky2", r_pinky3: "RightHandPinky3",
 // } as const;
 
-// // ─── MediaPipe pose landmark indices used ─────────────────────────────────────
-// // 11=L_shoulder  12=R_shoulder
-// // 13=L_elbow     14=R_elbow
-// // 15=L_wrist     16=R_wrist
-// // 17=L_pinky     18=R_pinky
-// // 19=L_index     20=R_index
-// // 21=L_thumb     22=R_thumb
-// // 23=L_hip       24=R_hip
-
-// // ─── MediaPipe hand landmark indices ─────────────────────────────────────────
-// // 0=wrist
-// // 1=thumb_cmc  2=thumb_mcp  3=thumb_ip   4=thumb_tip
-// // 5=index_mcp  6=index_pip  7=index_dip  8=index_tip
-// // 9=mid_mcp   10=mid_pip   11=mid_dip   12=mid_tip
-// // 13=ring_mcp 14=ring_pip  15=ring_dip  16=ring_tip
-// // 17=pinky_mcp 18=pinky_pip 19=pinky_dip 20=pinky_tip
-
-// // ─── Coordinate helpers ───────────────────────────────────────────────────────
+// /* ─────────────────────────────────────────────────────────────
+//    MEDIAPIPE HELPERS
+// ───────────────────────────────────────────────────────────── */
 // function mpToWorld(p: number[]): THREE.Vector3 {
-//   return new THREE.Vector3(
-//     p[0] - 0.5,    // centre X around 0
-//     0.5 - p[1],    // flip Y (MediaPipe y-down → Three y-up)
-//     -p[2]
-//   );
+//   return new THREE.Vector3(-p[0], -p[1], p[2]);
 // }
-
 // function mpDir(a: number[], b: number[]): THREE.Vector3 {
 //   return mpToWorld(b).sub(mpToWorld(a)).normalize();
 // }
 
-// function midpoint(a: number[], b: number[]): number[] {
-//   return a.map((v, i) => (v + b[i]) / 2);
-// }
-
-// // ─── Animated Avatar ──────────────────────────────────────────────────────────
-// function AnimatedAvatar({ keypoints, fps = 25 }: Props) {
+// /* ─────────────────────────────────────────────────────────────
+//    ANIMATED AVATAR (3-D)
+// ───────────────────────────────────────────────────────────── */
+// function AnimatedAvatar({
+//   keypoints,
+//   fps = 25,
+//   isPlaying,
+//   frameIndex,
+//   onFrameAdvance,
+// }: Props & {
+//   isPlaying: boolean;
+//   frameIndex: number;
+//   onFrameAdvance: () => void;
+// }) {
 //   const { scene } = useGLTF("/avatar.glb");
-
-//   const bones      = useRef<Record<string, THREE.Bone>>({});
+//   const bonesRef   = useRef<Record<string, THREE.Bone>>({});
 //   const restDir    = useRef<Record<string, THREE.Vector3>>({});
-//   // Frozen rest local quaternion — always rotate FROM this, never accumulate
 //   const restLocalQ = useRef<Record<string, THREE.Quaternion>>({});
-
-//   const frameIndex    = useRef(0);
-//   const elapsed       = useRef(0);
+//   const elapsed    = useRef(0);
 //   const frameInterval = 1 / fps;
 
-//   // ── Bone discovery on load ──────────────────────────────────────────────────
 //   useEffect(() => {
 //     scene.traverse((obj) => {
 //       if (!(obj as THREE.Bone).isBone) return;
 //       const bone = obj as THREE.Bone;
-//       bones.current[bone.name] = bone;
-
-//       // Freeze rest local quaternion once
+//       bonesRef.current[bone.name]   = bone;
 //       restLocalQ.current[bone.name] = bone.quaternion.clone();
-
-//       // World-space rest direction toward first child bone
-//       const childBone = bone.children.find(
-//         (c) => (c as THREE.Bone).isBone
-//       ) as THREE.Object3D | undefined;
-
+//     });
+//     scene.traverse((obj) => {
+//       if (!(obj as THREE.Bone).isBone) return;
+//       const bone = obj as THREE.Bone;
+//       const childBone = bone.children.find(c => (c as THREE.Bone).isBone) as THREE.Object3D | undefined;
 //       if (childBone) {
 //         const bPos = new THREE.Vector3();
 //         const cPos = new THREE.Vector3();
@@ -366,136 +82,3193 @@
 //         restDir.current[bone.name] = cPos.sub(bPos).normalize();
 //       }
 //     });
-
-//     // Console verification — check for any ❌
-//     console.group("🦴 Bone verification");
-//     Object.entries(BONES).forEach(([key, name]) => {
-//       if (bones.current[name]) console.log(`✅ ${key}: "${name}"`);
-//       else console.warn(`❌ MISSING ${key}: "${name}"`);
-//     });
-//     console.groupEnd();
 //   }, [scene]);
 
-//   // Reset animation when new word/keypoints arrive
-//   useEffect(() => {
-//     frameIndex.current = 0;
-//     elapsed.current = 0;
-//   }, [keypoints]);
+//   useEffect(() => { elapsed.current = 0; }, [keypoints]);
 
-//   // ── Core rotation helper ────────────────────────────────────────────────────
-//   function rotateBoneToward(boneName: string, targetDir: THREE.Vector3, alpha = 0.35) {
-//     const bone  = bones.current[boneName];
+//   function rotateBoneToward(boneName: string, targetDir: THREE.Vector3, alpha = 1.0) {
+//     const bone  = bonesRef.current[boneName];
 //     const rDir  = restDir.current[boneName];
 //     const restQ = restLocalQ.current[boneName];
 //     if (!bone || !rDir || !restQ || targetDir.lengthSq() < 0.001) return;
-
-//     // World-space delta: rest direction → target direction
-//     const worldDelta = new THREE.Quaternion().setFromUnitVectors(rDir, targetDir);
-
-//     // Convert to bone local space: localDelta = inv(parentWorld) * worldDelta
-//     const parentWorld = new THREE.Quaternion();
-//     if (bone.parent) bone.parent.getWorldQuaternion(parentWorld);
-//     const localDelta = parentWorld.clone().invert().multiply(worldDelta);
-
-//     // Always apply on top of FROZEN rest — never accumulates
-//     const targetQuat = restQ.clone().multiply(localDelta);
-//     bone.quaternion.slerp(targetQuat, alpha);
+//     bone.quaternion.copy(restQ);
+//     const restWorldQ = new THREE.Quaternion();
+//     bone.getWorldQuaternion(restWorldQ);
+//     const dot = rDir.dot(targetDir);
+//     if (dot < -0.9999) {
+//       const perp = Math.abs(rDir.x) < 0.9 ? new THREE.Vector3(1,0,0) : new THREE.Vector3(0,1,0);
+//       const axis = new THREE.Vector3().crossVectors(rDir, perp).normalize();
+//       const delta180 = new THREE.Quaternion().setFromAxisAngle(axis, Math.PI);
+//       const desired  = delta180.multiply(restWorldQ);
+//       const parentWorldQ = new THREE.Quaternion();
+//       if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQ);
+//       bone.quaternion.copy(parentWorldQ.invert().multiply(desired));
+//       return;
+//     }
+//     const delta = new THREE.Quaternion().setFromUnitVectors(rDir, targetDir);
+//     const desiredWorldQ = delta.multiply(restWorldQ);
+//     const parentWorldQ  = new THREE.Quaternion();
+//     if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQ);
+//     bone.quaternion.slerp(parentWorldQ.invert().multiply(desiredWorldQ), alpha);
 //   }
 
-//   // ── Finger driving ──────────────────────────────────────────────────────────
-//   function driveFinger(
-//     lm: number[][],
-//     mcpIdx: number, pipIdx: number, dipIdx: number, tipIdx: number,
-//     b1: string, b2: string, b3: string,
-//     alpha = 0.3
-//   ) {
-//     if (lm.length <= tipIdx) return;
-//     rotateBoneToward(b1, mpDir(lm[mcpIdx], lm[pipIdx]), alpha);
-//     rotateBoneToward(b2, mpDir(lm[pipIdx], lm[dipIdx]), alpha);
-//     rotateBoneToward(b3, mpDir(lm[dipIdx], lm[tipIdx]), alpha);
+//   function driveFinger(lm: number[][], mcp: number, pip: number, dip: number, tip: number,
+//     b1: string, b2: string, b3: string) {
+//     rotateBoneToward(b1, mpDir(lm[mcp], lm[pip]));
+//     rotateBoneToward(b2, mpDir(lm[pip], lm[dip]));
+//     rotateBoneToward(b3, mpDir(lm[dip], lm[tip]));
 //   }
 
-//   function driveHand(hand: number[][], side: "l" | "r", alpha = 0.3) {
+//   function driveHand(hand: number[][], side: "l" | "r") {
 //     if (!hand || hand.length < 21) return;
 //     const s = side;
-
-//     // Wrist → palm centre direction
-//     rotateBoneToward(BONES[`${s}_hand`], mpDir(hand[0], midpoint(hand[5], hand[17])), alpha);
-
-//     // All 5 fingers
-//     driveFinger(hand, 1,  2,  3,  4,  BONES[`${s}_thumb1`], BONES[`${s}_thumb2`], BONES[`${s}_thumb3`], alpha);
-//     driveFinger(hand, 5,  6,  7,  8,  BONES[`${s}_index1`], BONES[`${s}_index2`], BONES[`${s}_index3`], alpha);
-//     driveFinger(hand, 9,  10, 11, 12, BONES[`${s}_mid1`],   BONES[`${s}_mid2`],   BONES[`${s}_mid3`],   alpha);
-//     driveFinger(hand, 13, 14, 15, 16, BONES[`${s}_ring1`],  BONES[`${s}_ring2`],  BONES[`${s}_ring3`],  alpha);
-//     driveFinger(hand, 17, 18, 19, 20, BONES[`${s}_pinky1`], BONES[`${s}_pinky2`], BONES[`${s}_pinky3`], alpha);
+//     rotateBoneToward(BONES[`${s}_hand`], mpDir(hand[0], hand[9]));
+//     driveFinger(hand,1,2,3,4,     BONES[`${s}_thumb1`],BONES[`${s}_thumb2`],BONES[`${s}_thumb3`]);
+//     driveFinger(hand,5,6,7,8,     BONES[`${s}_index1`],BONES[`${s}_index2`],BONES[`${s}_index3`]);
+//     driveFinger(hand,9,10,11,12,  BONES[`${s}_mid1`],  BONES[`${s}_mid2`],  BONES[`${s}_mid3`]);
+//     driveFinger(hand,13,14,15,16, BONES[`${s}_ring1`], BONES[`${s}_ring2`], BONES[`${s}_ring3`]);
+//     driveFinger(hand,17,18,19,20, BONES[`${s}_pinky1`],BONES[`${s}_pinky2`],BONES[`${s}_pinky3`]);
 //   }
 
-//   // ── Per-frame animation loop ────────────────────────────────────────────────
 //   useFrame((_, delta) => {
-//     if (!keypoints?.length) return;
-
-//     // Advance at correct fps — clamp delta to avoid big jumps
+//     if (!isPlaying || !keypoints?.length) return;
 //     elapsed.current += Math.min(delta, 0.1);
 //     if (elapsed.current >= frameInterval) {
 //       elapsed.current = 0;
-//       frameIndex.current = (frameIndex.current + 1) % keypoints.length;
+//       if (frameIndex < keypoints.length - 1) onFrameAdvance();
 //     }
-
-//     const frame = keypoints[frameIndex.current];
+//     const frame = keypoints[frameIndex];
 //     if (!frame) return;
-
-//     const pose      = frame.pose       as number[][] | undefined;
-//     const leftHand  = frame.left_hand  as number[][] | undefined;
-//     const rightHand = frame.right_hand as number[][] | undefined;
-
-//     // Arms (pose landmarks)
+//     const pose  = frame.pose       as number[][] | undefined;
+//     const left  = frame.left_hand  as number[][] | undefined;
+//     const right = frame.right_hand as number[][] | undefined;
 //     if (pose && pose.length >= 17) {
-//       rotateBoneToward(BONES.l_upperarm, mpDir(pose[11], pose[13]));
-//       rotateBoneToward(BONES.l_forearm,  mpDir(pose[13], pose[15]));
-//       rotateBoneToward(BONES.r_upperarm, mpDir(pose[12], pose[14]));
-//       rotateBoneToward(BONES.r_forearm,  mpDir(pose[14], pose[16]));
+//       rotateBoneToward(BONES.r_upperarm, mpDir(pose[11], pose[13]));
+//       rotateBoneToward(BONES.r_forearm,  mpDir(pose[13], pose[15]));
+//       rotateBoneToward(BONES.l_upperarm, mpDir(pose[12], pose[14]));
+//       rotateBoneToward(BONES.l_forearm,  mpDir(pose[14], pose[16]));
 //     }
-
-//     // Hands + all fingers
-//     // Falls back to pose wrist→fingertip when hand landmarks are null
-//     if (leftHand) {
-//       driveHand(leftHand, "l");
-//     } else if (pose && pose.length >= 22) {
-//       rotateBoneToward(BONES.l_hand, mpDir(pose[15], midpoint(pose[17], pose[19])), 0.3);
-//     }
-
-//     if (rightHand) {
-//       driveHand(rightHand, "r");
-//     } else if (pose && pose.length >= 22) {
-//       rotateBoneToward(BONES.r_hand, mpDir(pose[16], midpoint(pose[18], pose[20])), 0.3);
-//     }
+//     if (left)  driveHand(left,  "r");
+//     if (right) driveHand(right, "l");
 //   });
 
-//   // Mixamo avatars export in A-pose facing +Z
-//   // rotation={[0, Math.PI, 0]} makes avatar face the camera
-//   // Adjust position Y to vertically centre in your viewport
 //   return (
-//     <group rotation={[0, Math.PI, 0]} position={[0, -1, 0]}>
+//     <group position={[0, -0.8, 0]}>
 //       <primitive object={scene} scale={1} />
 //     </group>
 //   );
 // }
 
-// // ─── Canvas wrapper ───────────────────────────────────────────────────────────
-// export default function AvatarViewer({ keypoints, fps = 25 }: Props) {
+// /* ─────────────────────────────────────────────────────────────
+//    SKELETON CONNECTIONS
+// ───────────────────────────────────────────────────────────── */
+// const POSE_CONNECTIONS: [number, number][] = [
+//   [11,12],[11,13],[13,15],[12,14],[14,16],
+//   [11,23],[12,24],[23,24],[23,25],[24,26],
+//   [25,27],[26,28],[27,29],[28,30],[29,31],[30,32],
+// ];
+// const HAND_CONNECTIONS: [number, number][] = [
+//   [0,1],[1,2],[2,3],[3,4],
+//   [0,5],[5,6],[6,7],[7,8],
+//   [0,9],[9,10],[10,11],[11,12],
+//   [0,13],[13,14],[14,15],[15,16],
+//   [0,17],[17,18],[18,19],[19,20],
+//   [5,9],[9,13],[13,17],
+// ];
+
+// /* ─────────────────────────────────────────────────────────────
+//    SKELETON VIEWER (2-D canvas)
+// ───────────────────────────────────────────────────────────── */
+// function SkeletonViewer({
+//   keypoints,
+//   fps,
+//   isPlaying,
+//   frameIndex,
+//   onFrameAdvance,
+// }: {
+//   keypoints: any[];
+//   fps: number;
+//   isPlaying: boolean;
+//   frameIndex: number;
+//   onFrameAdvance: () => void;
+// }) {
+//   const canvasRef    = useRef<HTMLCanvasElement>(null);
+//   const rafRef       = useRef<number>(0);
+//   const lastTimeRef  = useRef<number>(0);
+//   const frameInterval = 1000 / fps;
+
+//   // Keep a ref to the latest values so RAF closure stays fresh
+//   const isPlayingRef   = useRef(isPlaying);
+//   const frameIndexRef  = useRef(frameIndex);
+//   const totalRef       = useRef(keypoints.length);
+//   useEffect(() => { isPlayingRef.current  = isPlaying;       }, [isPlaying]);
+//   useEffect(() => { frameIndexRef.current = frameIndex;      }, [frameIndex]);
+//   useEffect(() => { totalRef.current      = keypoints.length;}, [keypoints.length]);
+
+//   // ── draw one frame ──────────────────────────────────────
+//   const draw = useCallback((frameIdx: number) => {
+//     const canvas = canvasRef.current;
+//     if (!canvas) return;
+//     const ctx = canvas.getContext("2d");
+//     if (!ctx) return;
+
+//     const W = canvas.width;
+//     const H = canvas.height;
+
+//     ctx.fillStyle = "#080d1a";
+//     ctx.fillRect(0, 0, W, H);
+//     ctx.strokeStyle = "rgba(99,102,241,0.08)";
+//     ctx.lineWidth = 1;
+//     for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+//     for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+//     const frame = keypoints[frameIdx];
+//     if (!frame) return;
+
+//     const pose  = frame.pose       as number[][] | undefined;
+//     const left  = frame.left_hand  as number[][] | undefined;
+//     const right = frame.right_hand as number[][] | undefined;
+
+//     // pose world coords: negate x to mirror for viewer, keep y natural (up = up)
+//     function poseXY(pt: number[]): [number, number] {
+//       return [(-pt[0] * 0.55 + 0.5) * W, (pt[1] * 0.55 + 0.38) * H];
+//     }
+//     // Hand landmarks in metres (world space). Anchor from wrist canvas pos.
+//     // HAND_SCALE magnifies so individual fingers are clearly visible.
+//     const HAND_SCALE = 400;
+//     function handXY(pt: number[], wx: number, wy: number): [number, number] {
+//       return [wx + (-pt[0]) * HAND_SCALE, wy + pt[1] * HAND_SCALE];
+//     }
+
+//     // ── Face (landmarks 0–10) ──────────────────────────────
+//     if (pose && pose.length >= 11) {
+//       const nose   = pose[0]  ? poseXY(pose[0])  : null;
+//       const lEye   = pose[2]  ? poseXY(pose[2])  : null;
+//       const rEye   = pose[5]  ? poseXY(pose[5])  : null;
+//       const lEar   = pose[7]  ? poseXY(pose[7])  : null;
+//       const rEar   = pose[8]  ? poseXY(pose[8])  : null;
+//       const mouthL = pose[9]  ? poseXY(pose[9])  : null;
+//       const mouthR = pose[10] ? poseXY(pose[10]) : null;
+
+//       // Head circle from ear span
+//       if (lEar && rEar) {
+//         const hcx = (lEar[0] + rEar[0]) / 2;
+//         const hcy = (lEar[1] + rEar[1]) / 2;
+//         const hr  = Math.hypot(lEar[0] - rEar[0], lEar[1] - rEar[1]) * 0.65;
+//         ctx.beginPath(); ctx.arc(hcx, hcy, hr, 0, Math.PI * 2);
+//         ctx.strokeStyle = "rgba(167,139,250,0.45)"; ctx.lineWidth = 1.5; ctx.stroke();
+//       }
+
+//       // Nose → eye guide lines
+//       if (nose && lEye) {
+//         ctx.beginPath(); ctx.moveTo(nose[0], nose[1]); ctx.lineTo(lEye[0], lEye[1]);
+//         ctx.strokeStyle = "rgba(167,139,250,0.25)"; ctx.lineWidth = 1; ctx.stroke();
+//       }
+//       if (nose && rEye) {
+//         ctx.beginPath(); ctx.moveTo(nose[0], nose[1]); ctx.lineTo(rEye[0], rEye[1]);
+//         ctx.strokeStyle = "rgba(167,139,250,0.25)"; ctx.lineWidth = 1; ctx.stroke();
+//       }
+
+//       // Mouth
+//       if (mouthL && mouthR) {
+//         ctx.beginPath(); ctx.moveTo(mouthL[0], mouthL[1]); ctx.lineTo(mouthR[0], mouthR[1]);
+//         ctx.strokeStyle = "rgba(244,114,182,0.85)"; ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.stroke();
+//       }
+
+//       // Eyes
+//       for (const eye of [lEye, rEye]) {
+//         if (!eye) continue;
+//         ctx.beginPath(); ctx.arc(eye[0], eye[1], 3.5, 0, Math.PI * 2);
+//         ctx.fillStyle = "#a5b4fc"; ctx.shadowColor = "#818cf8"; ctx.shadowBlur = 8;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+
+//       // Ears
+//       for (const ear of [lEar, rEar]) {
+//         if (!ear) continue;
+//         ctx.beginPath(); ctx.arc(ear[0], ear[1], 3, 0, Math.PI * 2);
+//         ctx.fillStyle = "#818cf8"; ctx.fill();
+//       }
+
+//       // Nose
+//       if (nose) {
+//         ctx.beginPath(); ctx.arc(nose[0], nose[1], 3, 0, Math.PI * 2);
+//         ctx.fillStyle = "#c4b5fd"; ctx.shadowColor = "#a78bfa"; ctx.shadowBlur = 6;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+//     }
+
+//     // ── Body skeleton (landmarks 11+) ──────────────────────
+//     if (pose && pose.length >= 17) {
+//       ctx.lineCap = "round";
+//       for (const [a, b] of POSE_CONNECTIONS) {
+//         if (!pose[a] || !pose[b]) continue;
+//         const [ax, ay] = poseXY(pose[a]);
+//         const [bx, by] = poseXY(pose[b]);
+//         const grad = ctx.createLinearGradient(ax, ay, bx, by);
+//         grad.addColorStop(0, "rgba(99,102,241,0.9)");
+//         grad.addColorStop(1, "rgba(167,139,250,0.9)");
+//         ctx.strokeStyle = grad; ctx.lineWidth = 2.5;
+//         ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+//       }
+//       for (let i = 11; i <= 32; i++) {
+//         if (!pose[i]) continue;
+//         const [x, y] = poseXY(pose[i]);
+//         const isWrist = i === 15 || i === 16;
+//         ctx.beginPath(); ctx.arc(x, y, isWrist ? 5 : 4, 0, Math.PI * 2);
+//         ctx.fillStyle   = isWrist ? "#f472b6" : "#818cf8";
+//         ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+//     }
+
+//     const leftWrist  = pose?.[15] ? poseXY(pose[15]) : [W * 0.65, H * 0.62] as [number,number];
+//     const rightWrist = pose?.[16] ? poseXY(pose[16]) : [W * 0.35, H * 0.62] as [number,number];
+
+//     function drawHand(c: CanvasRenderingContext2D, lm: number[][], wx: number, wy: number, lineColor: string, dotColor: string) {
+//       if (!lm || lm.length < 21) return;
+//       c.lineCap = "round";
+//       c.lineJoin = "round";
+
+//       // Each finger as a chain of straight lines — exactly like the Python MediaPipe style
+//       // Chains: thumb=[0,1,2,3,4], index=[0,5,6,7,8], middle=[0,9,10,11,12],
+//       //         ring=[0,13,14,15,16], pinky=[0,17,18,19,20]
+//       // Palm cross-connections: 5-9, 9-13, 13-17
+//       const chains = [
+//         [0, 1, 2, 3, 4],       // thumb
+//         [0, 5, 6, 7, 8],       // index
+//         [0, 9, 10, 11, 12],    // middle
+//         [0, 13, 14, 15, 16],   // ring
+//         [0, 17, 18, 19, 20],   // pinky
+//       ];
+//       const palmLinks: [number, number][] = [[5,9],[9,13],[13,17]];
+
+//       // ── Bone lines ─────────────────────────────────────────
+//       c.strokeStyle = lineColor;
+//       // Slightly thicker near palm, thinner near fingertip
+//       chains.forEach((chain) => {
+//         for (let s = 0; s < chain.length - 1; s++) {
+//           const [ax, ay] = handXY(lm[chain[s]],   wx, wy);
+//           const [bx, by] = handXY(lm[chain[s+1]], wx, wy);
+//           // Thicker at palm (s=0), thinner near tip
+//           c.lineWidth = s === 0 ? 2.5 : s === 1 ? 2.0 : 1.6;
+//           c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+//         }
+//       });
+
+//       // Palm knuckle cross-bar
+//       c.lineWidth = 1.8;
+//       palmLinks.forEach(([a, b]) => {
+//         const [ax, ay] = handXY(lm[a], wx, wy);
+//         const [bx, by] = handXY(lm[b], wx, wy);
+//         c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+//       });
+
+//       // ── Joint dots ─────────────────────────────────────────
+//       for (let i = 0; i < 21; i++) {
+//         const [x, y] = handXY(lm[i], wx, wy);
+//         // Tips (4,8,12,16,20) are white; knuckles are dotColor; wrist is larger
+//         const isTip   = [4, 8, 12, 16, 20].includes(i);
+//         const isWrist = i === 0;
+//         const r = isWrist ? 5 : isTip ? 3.5 : 2.5;
+//         c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2);
+//         c.fillStyle   = isTip ? "#ffffff" : dotColor;
+//         c.shadowColor = dotColor;
+//         c.shadowBlur  = isTip ? 10 : isWrist ? 14 : 5;
+//         c.fill();
+//         c.shadowBlur  = 0;
+//       }
+//     }
+
+//     if (left)  drawHand(ctx, left,  leftWrist[0],  leftWrist[1],  "rgba(251,191,36,0.75)",  "#fbbf24");
+//     if (right) drawHand(ctx, right, rightWrist[0], rightWrist[1], "rgba(52,211,153,0.75)",  "#34d399");
+
+//     // Legend
+//     ([["#818cf8","Pose"],["#fbbf24","Left Hand"],["#34d399","Right Hand"]] as [string,string][])
+//       .forEach(([color, label], i) => {
+//         ctx.beginPath(); ctx.arc(14, H - 14 - i * 18, 5, 0, Math.PI * 2);
+//         ctx.fillStyle = color; ctx.shadowBlur = 0; ctx.fill();
+//         ctx.fillStyle = "rgba(203,213,225,0.7)";
+//         ctx.font = "11px monospace"; ctx.fillText(label, 24, H - 10 - i * 18);
+//       });
+
+//     ctx.fillStyle = "rgba(129,140,248,0.45)";
+//     ctx.font = "10px monospace"; ctx.textAlign = "right";
+//     ctx.fillText(`${frameIdx + 1} / ${keypoints.length}`, W - 8, H - 8);
+//     ctx.textAlign = "left";
+//   }, [keypoints]);
+
+//   // Redraw whenever frameIndex changes
+//   useEffect(() => { draw(frameIndex); }, [frameIndex, draw]);
+
+//   // RAF loop for advancing frames
+//   useEffect(() => {
+//     cancelAnimationFrame(rafRef.current);
+//     lastTimeRef.current = 0;
+//     if (!isPlaying) return;
+
+//     const loop = (ts: number) => {
+//       if (!lastTimeRef.current) lastTimeRef.current = ts;
+//       if (ts - lastTimeRef.current >= frameInterval) {
+//         lastTimeRef.current = ts;
+//         if (frameIndexRef.current < totalRef.current - 1) {
+//           onFrameAdvance();
+//         }
+//       }
+//       rafRef.current = requestAnimationFrame(loop);
+//     };
+//     rafRef.current = requestAnimationFrame(loop);
+//     return () => cancelAnimationFrame(rafRef.current);
+//   }, [isPlaying, frameInterval, onFrameAdvance]);
+
 //   return (
-//     <Canvas camera={{ position: [0, 1, 3], fov: 50 }}>
-//       <ambientLight intensity={0.6} />
-//       <directionalLight position={[2, 4, 3]} intensity={1.4} />
-//       <AnimatedAvatar keypoints={keypoints} fps={fps} />
-//     </Canvas>
+//     <canvas
+//       ref={canvasRef}
+//       width={520}
+//       height={400}
+//       style={{ width: "100%", height: "100%", display: "block" }}
+//     />
+//   );
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    PLAYBACK CONTROLS
+// ───────────────────────────────────────────────────────────── */
+// function PlaybackControls({
+//   isPlaying, onPlay, onPause, onReplay, frameIndex, total,
+// }: {
+//   isPlaying: boolean;
+//   onPlay: () => void;
+//   onPause: () => void;
+//   onReplay: () => void;
+//   frameIndex: number;
+//   total: number;
+// }) {
+//   const pct = total > 1 ? (frameIndex / (total - 1)) * 100 : 0;
+//   const base: React.CSSProperties = {
+//     display: "flex", alignItems: "center", justifyContent: "center",
+//     border: "none", cursor: "pointer", transition: "all 0.15s",
+//   };
+//   return (
+//     <div style={{
+//       display: "flex", flexDirection: "column", gap: "8px",
+//       padding: "10px 16px 12px", flexShrink: 0,
+//       background: "rgba(8,13,26,0.92)",
+//       borderTop: "1px solid rgba(99,102,241,0.18)",
+//     }}>
+//       {/* Progress bar */}
+//       <div style={{ height: "4px", borderRadius: "4px", background: "rgba(99,102,241,0.15)", overflow: "hidden" }}>
+//         <div style={{
+//           height: "100%", width: `${pct}%`,
+//           background: "linear-gradient(90deg, #6366f1, #a78bfa)",
+//           borderRadius: "4px", transition: "width 0.08s linear",
+//         }} />
+//       </div>
+//       {/* Buttons */}
+//       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "14px" }}>
+//         <button onClick={onReplay} title="Replay" style={{
+//           ...base, width: 36, height: 36, borderRadius: "50%",
+//           background: "rgba(99,102,241,0.12)",
+//           border: "1px solid rgba(99,102,241,0.35)",
+//           color: "#a78bfa", fontSize: "18px",
+//         }}
+//           onMouseEnter={e => (e.currentTarget.style.background = "rgba(99,102,241,0.28)")}
+//           onMouseLeave={e => (e.currentTarget.style.background = "rgba(99,102,241,0.12)")}
+//         >↺</button>
+
+//         {isPlaying ? (
+//           <button onClick={onPause} title="Pause" style={{
+//             ...base, width: 46, height: 46, borderRadius: "50%",
+//             background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+//             color: "#fff", fontSize: "20px",
+//             boxShadow: "0 0 20px rgba(99,102,241,0.5)",
+//           }}
+//             onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+//             onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+//           >⏸</button>
+//         ) : (
+//           <button onClick={onPlay} title="Play" style={{
+//             ...base, width: 46, height: 46, borderRadius: "50%",
+//             background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+//             color: "#fff", fontSize: "20px",
+//             boxShadow: "0 0 20px rgba(99,102,241,0.5)",
+//           }}
+//             onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+//             onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+//           >▶</button>
+//         )}
+
+//         <span style={{
+//           fontSize: "11px", fontFamily: "monospace",
+//           color: "rgba(129,140,248,0.5)", minWidth: "70px", textAlign: "center",
+//         }}>
+//           {total > 0 ? `${frameIndex + 1} / ${total}` : "no data"}
+//         </span>
+//       </div>
+//     </div>
+//   );
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    ROOT EXPORT
+// ───────────────────────────────────────────────────────────── */
+// export default function AvatarViewer({ keypoints, fps = 25 }: Props) {
+//   const [activeTab,  setActiveTab]  = useState<"avatar" | "skeleton">("avatar");
+//   const [isPlaying,  setIsPlaying]  = useState(false);
+//   const [frameIndex, setFrameIndex] = useState(0);
+
+//   const advanceFrame = useCallback(() => {
+//     setFrameIndex(prev => {
+//       const next = prev + 1;
+//       if (next >= keypoints.length - 1) setIsPlaying(false);
+//       return Math.min(next, keypoints.length - 1);
+//     });
+//   }, [keypoints.length]);
+
+//   useEffect(() => { setFrameIndex(0); setIsPlaying(false); }, [keypoints]);
+
+//   const tab = (active: boolean): React.CSSProperties => ({
+//     flex: 1, padding: "9px 0", border: "none", cursor: "pointer",
+//     background: active ? "rgba(99,102,241,0.2)" : "transparent",
+//     borderBottom: `2px solid ${active ? "#818cf8" : "transparent"}`,
+//     color: active ? "#c7d2fe" : "rgba(148,163,184,0.5)",
+//     fontWeight: active ? 600 : 400, fontSize: "13px",
+//     letterSpacing: "0.04em", transition: "all 0.18s",
+//   });
+
+//   return (
+//     <div style={{
+//       display: "flex", flexDirection: "column",
+//       height: "100%", width: "100%",
+//       background: "#080d1a",
+//     }}>
+//       {/* TAB BAR */}
+//       <div style={{
+//         display: "flex", flexShrink: 0,
+//         background: "rgba(8,13,26,0.98)",
+//         borderBottom: "1px solid rgba(99,102,241,0.18)",
+//       }}>
+//         <button style={tab(activeTab === "avatar")}   onClick={() => setActiveTab("avatar")}>
+//           🧍 Avatar
+//         </button>
+//         <button style={tab(activeTab === "skeleton")} onClick={() => setActiveTab("skeleton")}>
+//           🦴 Skeleton
+//         </button>
+//       </div>
+
+//       {/* VIEWER */}
+//       <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
+
+//         {/* Avatar */}
+//         <div style={{ position: "absolute", inset: 0, display: activeTab === "avatar" ? "block" : "none" }}>
+//           <Canvas camera={{ position: [0, 1, 3], fov: 50 }}>
+//             <ambientLight intensity={0.6} />
+//             <directionalLight position={[2, 4, 3]} intensity={1.4} />
+//             <AnimatedAvatar
+//               keypoints={keypoints} fps={fps}
+//               isPlaying={isPlaying} frameIndex={frameIndex}
+//               onFrameAdvance={advanceFrame}
+//             />
+//           </Canvas>
+//         </div>
+
+//         {/* Skeleton */}
+//         <div style={{
+//           position: "absolute", inset: 0,
+//           display: activeTab === "skeleton" ? "flex" : "none",
+//           alignItems: "center", justifyContent: "center",
+//         }}>
+//           {keypoints.length > 0 ? (
+//             <SkeletonViewer
+//               keypoints={keypoints} fps={fps}
+//               isPlaying={isPlaying} frameIndex={frameIndex}
+//               onFrameAdvance={advanceFrame}
+//             />
+//           ) : (
+//             <div style={{ textAlign: "center", color: "rgba(148,163,184,0.4)" }}>
+//               <div style={{ fontSize: "36px", marginBottom: "8px" }}>🦴</div>
+//               <div style={{ fontSize: "13px" }}>No keypoints loaded yet</div>
+//             </div>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* CONTROLS */}
+//       <PlaybackControls
+//         isPlaying={isPlaying}
+//         onPlay={() => setIsPlaying(true)}
+//         onPause={() => setIsPlaying(false)}
+//         onReplay={() => { setFrameIndex(0); setIsPlaying(true); }}
+//         frameIndex={frameIndex}
+//         total={keypoints.length}
+//       />
+//     </div>
 //   );
 // }
 
 
+
+// import { Canvas, useFrame } from "@react-three/fiber";
+// import { useGLTF } from "@react-three/drei";
+// import { useEffect, useRef, useState, useCallback } from "react";
+// import * as THREE from "three";
+
+// interface Props {
+//   keypoints: any[];
+//   fps?: number;
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    MIXAMO BONE MAP
+// ───────────────────────────────────────────────────────────── */
+// const BONES = {
+//   l_upperarm: "LeftArm",
+//   l_forearm:  "LeftForeArm",
+//   l_hand:     "LeftHand",
+//   r_upperarm: "RightArm",
+//   r_forearm:  "RightForeArm",
+//   r_hand:     "RightHand",
+//   l_thumb1: "LeftHandThumb1",  l_thumb2: "LeftHandThumb2",  l_thumb3: "LeftHandThumb3",
+//   l_index1: "LeftHandIndex1",  l_index2: "LeftHandIndex2",  l_index3: "LeftHandIndex3",
+//   l_mid1:   "LeftHandMiddle1", l_mid2:   "LeftHandMiddle2", l_mid3:   "LeftHandMiddle3",
+//   l_ring1:  "LeftHandRing1",   l_ring2:  "LeftHandRing2",   l_ring3:  "LeftHandRing3",
+//   l_pinky1: "LeftHandPinky1",  l_pinky2: "LeftHandPinky2",  l_pinky3: "LeftHandPinky3",
+//   r_thumb1: "RightHandThumb1", r_thumb2: "RightHandThumb2", r_thumb3: "RightHandThumb3",
+//   r_index1: "RightHandIndex1", r_index2: "RightHandIndex2", r_index3: "RightHandIndex3",
+//   r_mid1:   "RightHandMiddle1",r_mid2:   "RightHandMiddle2",r_mid3:   "RightHandMiddle3",
+//   r_ring1:  "RightHandRing1",  r_ring2:  "RightHandRing2",  r_ring3:  "RightHandRing3",
+//   r_pinky1: "RightHandPinky1", r_pinky2: "RightHandPinky2", r_pinky3: "RightHandPinky3",
+// } as const;
+
+// /* ─────────────────────────────────────────────────────────────
+//    MEDIAPIPE HELPERS
+// ───────────────────────────────────────────────────────────── */
+// function mpToWorld(p: number[]): THREE.Vector3 {
+//   return new THREE.Vector3(-p[0], -p[1], p[2]);
+// }
+// function mpDir(a: number[], b: number[]): THREE.Vector3 {
+//   return mpToWorld(b).sub(mpToWorld(a)).normalize();
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    ANIMATED AVATAR (3-D)
+// ───────────────────────────────────────────────────────────── */
+// function AnimatedAvatar({
+//   keypoints,
+//   fps = 25,
+//   isPlaying,
+//   frameIndex,
+//   onFrameAdvance,
+// }: Props & {
+//   isPlaying: boolean;
+//   frameIndex: number;
+//   onFrameAdvance: () => void;
+// }) {
+//   const { scene } = useGLTF("/avatar.glb");
+//   const bonesRef   = useRef<Record<string, THREE.Bone>>({});
+//   const restDir    = useRef<Record<string, THREE.Vector3>>({});
+//   const restLocalQ = useRef<Record<string, THREE.Quaternion>>({});
+//   const elapsed    = useRef(0);
+//   const frameInterval = 1 / fps;
+
+//   useEffect(() => {
+//     scene.traverse((obj) => {
+//       if (!(obj as THREE.Bone).isBone) return;
+//       const bone = obj as THREE.Bone;
+//       bonesRef.current[bone.name]   = bone;
+//       restLocalQ.current[bone.name] = bone.quaternion.clone();
+//     });
+//     scene.traverse((obj) => {
+//       if (!(obj as THREE.Bone).isBone) return;
+//       const bone = obj as THREE.Bone;
+//       const childBone = bone.children.find(c => (c as THREE.Bone).isBone) as THREE.Object3D | undefined;
+//       if (childBone) {
+//         const bPos = new THREE.Vector3();
+//         const cPos = new THREE.Vector3();
+//         bone.getWorldPosition(bPos);
+//         childBone.getWorldPosition(cPos);
+//         restDir.current[bone.name] = cPos.sub(bPos).normalize();
+//       }
+//     });
+//   }, [scene]);
+
+//   useEffect(() => { elapsed.current = 0; }, [keypoints]);
+
+//   function rotateBoneToward(boneName: string, targetDir: THREE.Vector3, alpha = 1.0) {
+//     const bone  = bonesRef.current[boneName];
+//     const rDir  = restDir.current[boneName];
+//     const restQ = restLocalQ.current[boneName];
+//     if (!bone || !rDir || !restQ || targetDir.lengthSq() < 0.001) return;
+//     bone.quaternion.copy(restQ);
+//     const restWorldQ = new THREE.Quaternion();
+//     bone.getWorldQuaternion(restWorldQ);
+//     const dot = rDir.dot(targetDir);
+//     if (dot < -0.9999) {
+//       const perp = Math.abs(rDir.x) < 0.9 ? new THREE.Vector3(1,0,0) : new THREE.Vector3(0,1,0);
+//       const axis = new THREE.Vector3().crossVectors(rDir, perp).normalize();
+//       const delta180 = new THREE.Quaternion().setFromAxisAngle(axis, Math.PI);
+//       const desired  = delta180.multiply(restWorldQ);
+//       const parentWorldQ = new THREE.Quaternion();
+//       if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQ);
+//       bone.quaternion.copy(parentWorldQ.invert().multiply(desired));
+//       return;
+//     }
+//     const delta = new THREE.Quaternion().setFromUnitVectors(rDir, targetDir);
+//     const desiredWorldQ = delta.multiply(restWorldQ);
+//     const parentWorldQ  = new THREE.Quaternion();
+//     if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQ);
+//     bone.quaternion.slerp(parentWorldQ.invert().multiply(desiredWorldQ), alpha);
+//   }
+
+//   function driveFinger(lm: number[][], mcp: number, pip: number, dip: number, tip: number,
+//     b1: string, b2: string, b3: string) {
+//     rotateBoneToward(b1, mpDir(lm[mcp], lm[pip]));
+//     rotateBoneToward(b2, mpDir(lm[pip], lm[dip]));
+//     rotateBoneToward(b3, mpDir(lm[dip], lm[tip]));
+//   }
+
+//   function driveHand(hand: number[][], side: "l" | "r") {
+//     if (!hand || hand.length < 21) return;
+//     const s = side;
+//     rotateBoneToward(BONES[`${s}_hand`], mpDir(hand[0], hand[9]));
+//     driveFinger(hand,1,2,3,4,     BONES[`${s}_thumb1`],BONES[`${s}_thumb2`],BONES[`${s}_thumb3`]);
+//     driveFinger(hand,5,6,7,8,     BONES[`${s}_index1`],BONES[`${s}_index2`],BONES[`${s}_index3`]);
+//     driveFinger(hand,9,10,11,12,  BONES[`${s}_mid1`],  BONES[`${s}_mid2`],  BONES[`${s}_mid3`]);
+//     driveFinger(hand,13,14,15,16, BONES[`${s}_ring1`], BONES[`${s}_ring2`], BONES[`${s}_ring3`]);
+//     driveFinger(hand,17,18,19,20, BONES[`${s}_pinky1`],BONES[`${s}_pinky2`],BONES[`${s}_pinky3`]);
+//   }
+
+//   useFrame((_, delta) => {
+//     if (!isPlaying || !keypoints?.length) return;
+//     elapsed.current += Math.min(delta, 0.1);
+//     if (elapsed.current >= frameInterval) {
+//       elapsed.current = 0;
+//       if (frameIndex < keypoints.length - 1) onFrameAdvance();
+//     }
+//     const frame = keypoints[frameIndex];
+//     if (!frame) return;
+//     const pose  = frame.pose       as number[][] | undefined;
+//     const left  = frame.left_hand  as number[][] | undefined;
+//     const right = frame.right_hand as number[][] | undefined;
+//     if (pose && pose.length >= 17) {
+//       rotateBoneToward(BONES.r_upperarm, mpDir(pose[11], pose[13]));
+//       rotateBoneToward(BONES.r_forearm,  mpDir(pose[13], pose[15]));
+//       rotateBoneToward(BONES.l_upperarm, mpDir(pose[12], pose[14]));
+//       rotateBoneToward(BONES.l_forearm,  mpDir(pose[14], pose[16]));
+//     }
+//     if (left)  driveHand(left,  "r");
+//     if (right) driveHand(right, "l");
+//   });
+
+//   return (
+//     <group position={[0, -0.8, 0]}>
+//       <primitive object={scene} scale={1} />
+//     </group>
+//   );
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    SKELETON CONNECTIONS
+// ───────────────────────────────────────────────────────────── */
+// const POSE_CONNECTIONS: [number, number][] = [
+//   [11,12],[11,13],[13,15],[12,14],[14,16],
+//   [11,23],[12,24],[23,24],[23,25],[24,26],
+//   [25,27],[26,28],[27,29],[28,30],[29,31],[30,32],
+// ];
+// const HAND_CONNECTIONS: [number, number][] = [
+//   [0,1],[1,2],[2,3],[3,4],
+//   [0,5],[5,6],[6,7],[7,8],
+//   [0,9],[9,10],[10,11],[11,12],
+//   [0,13],[13,14],[14,15],[15,16],
+//   [0,17],[17,18],[18,19],[19,20],
+//   [5,9],[9,13],[13,17],
+// ];
+
+// /* ─────────────────────────────────────────────────────────────
+//    SKELETON VIEWER (2-D canvas)
+// ───────────────────────────────────────────────────────────── */
+// function SkeletonViewer({
+//   keypoints,
+//   fps,
+//   isPlaying,
+//   frameIndex,
+//   onFrameAdvance,
+// }: {
+//   keypoints: any[];
+//   fps: number;
+//   isPlaying: boolean;
+//   frameIndex: number;
+//   onFrameAdvance: () => void;
+// }) {
+//   const canvasRef    = useRef<HTMLCanvasElement>(null);
+//   const rafRef       = useRef<number>(0);
+//   const lastTimeRef  = useRef<number>(0);
+//   const frameInterval = 1000 / fps;
+
+//   // Keep a ref to the latest values so RAF closure stays fresh
+//   const isPlayingRef   = useRef(isPlaying);
+//   const frameIndexRef  = useRef(frameIndex);
+//   const totalRef       = useRef(keypoints.length);
+//   useEffect(() => { isPlayingRef.current  = isPlaying;       }, [isPlaying]);
+//   useEffect(() => { frameIndexRef.current = frameIndex;      }, [frameIndex]);
+//   useEffect(() => { totalRef.current      = keypoints.length;}, [keypoints.length]);
+
+//   // ── draw one frame ──────────────────────────────────────
+//   const draw = useCallback((frameIdx: number) => {
+//     const canvas = canvasRef.current;
+//     if (!canvas) return;
+//     const ctx = canvas.getContext("2d");
+//     if (!ctx) return;
+
+//     const W = canvas.width;
+//     const H = canvas.height;
+
+//     ctx.fillStyle = "#080d1a";
+//     ctx.fillRect(0, 0, W, H);
+//     ctx.strokeStyle = "rgba(99,102,241,0.08)";
+//     ctx.lineWidth = 1;
+//     for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+//     for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+//     const frame = keypoints[frameIdx];
+//     if (!frame) return;
+
+//     const pose  = frame.pose       as number[][] | undefined;
+//     const left  = frame.left_hand  as number[][] | undefined;
+//     const right = frame.right_hand as number[][] | undefined;
+
+//     // pose world coords: negate x to mirror for viewer, keep y natural (up = up)
+//     function poseXY(pt: number[]): [number, number] {
+//       return [(-pt[0] * 0.55 + 0.5) * W, (pt[1] * 0.55 + 0.38) * H];
+//     }
+//     // Hand landmarks are in world space (metres), wrist-relative after subtracting lm[0].
+//     // Use the SAME scale as poseXY (0.55 * canvas dimension) so the hand
+//     // sits flush against the pose wrist with no gap or overlap.
+//     function handXY(pt: number[], wristLm: number[], wx: number, wy: number): [number, number] {
+//       const rx = pt[0] - wristLm[0]; // relative to wrist landmark
+//       const ry = pt[1] - wristLm[1];
+//       return [wx + (-rx) * 0.55 * W, wy + ry * 0.55 * H];
+//     }
+
+//     // ── Face (landmarks 0–10) ──────────────────────────────
+//     if (pose && pose.length >= 11) {
+//       const nose   = pose[0]  ? poseXY(pose[0])  : null;
+//       const lEye   = pose[2]  ? poseXY(pose[2])  : null;
+//       const rEye   = pose[5]  ? poseXY(pose[5])  : null;
+//       const lEar   = pose[7]  ? poseXY(pose[7])  : null;
+//       const rEar   = pose[8]  ? poseXY(pose[8])  : null;
+//       const mouthL = pose[9]  ? poseXY(pose[9])  : null;
+//       const mouthR = pose[10] ? poseXY(pose[10]) : null;
+
+//       // Head circle from ear span
+//       if (lEar && rEar) {
+//         const hcx = (lEar[0] + rEar[0]) / 2;
+//         const hcy = (lEar[1] + rEar[1]) / 2;
+//         const hr  = Math.hypot(lEar[0] - rEar[0], lEar[1] - rEar[1]) * 0.65;
+//         ctx.beginPath(); ctx.arc(hcx, hcy, hr, 0, Math.PI * 2);
+//         ctx.strokeStyle = "rgba(167,139,250,0.45)"; ctx.lineWidth = 1.5; ctx.stroke();
+//       }
+
+//       // Nose → eye guide lines
+//       if (nose && lEye) {
+//         ctx.beginPath(); ctx.moveTo(nose[0], nose[1]); ctx.lineTo(lEye[0], lEye[1]);
+//         ctx.strokeStyle = "rgba(167,139,250,0.25)"; ctx.lineWidth = 1; ctx.stroke();
+//       }
+//       if (nose && rEye) {
+//         ctx.beginPath(); ctx.moveTo(nose[0], nose[1]); ctx.lineTo(rEye[0], rEye[1]);
+//         ctx.strokeStyle = "rgba(167,139,250,0.25)"; ctx.lineWidth = 1; ctx.stroke();
+//       }
+
+//       // Mouth
+//       if (mouthL && mouthR) {
+//         ctx.beginPath(); ctx.moveTo(mouthL[0], mouthL[1]); ctx.lineTo(mouthR[0], mouthR[1]);
+//         ctx.strokeStyle = "rgba(244,114,182,0.85)"; ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.stroke();
+//       }
+
+//       // Eyes
+//       for (const eye of [lEye, rEye]) {
+//         if (!eye) continue;
+//         ctx.beginPath(); ctx.arc(eye[0], eye[1], 3.5, 0, Math.PI * 2);
+//         ctx.fillStyle = "#a5b4fc"; ctx.shadowColor = "#818cf8"; ctx.shadowBlur = 8;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+
+//       // Ears
+//       for (const ear of [lEar, rEar]) {
+//         if (!ear) continue;
+//         ctx.beginPath(); ctx.arc(ear[0], ear[1], 3, 0, Math.PI * 2);
+//         ctx.fillStyle = "#818cf8"; ctx.fill();
+//       }
+
+//       // Nose
+//       if (nose) {
+//         ctx.beginPath(); ctx.arc(nose[0], nose[1], 3, 0, Math.PI * 2);
+//         ctx.fillStyle = "#c4b5fd"; ctx.shadowColor = "#a78bfa"; ctx.shadowBlur = 6;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+//     }
+
+//     // ── Body skeleton (landmarks 11+) ──────────────────────
+//     if (pose && pose.length >= 17) {
+//       ctx.lineCap = "round";
+//       for (const [a, b] of POSE_CONNECTIONS) {
+//         if (!pose[a] || !pose[b]) continue;
+//         const [ax, ay] = poseXY(pose[a]);
+//         const [bx, by] = poseXY(pose[b]);
+//         const grad = ctx.createLinearGradient(ax, ay, bx, by);
+//         grad.addColorStop(0, "rgba(99,102,241,0.9)");
+//         grad.addColorStop(1, "rgba(167,139,250,0.9)");
+//         ctx.strokeStyle = grad; ctx.lineWidth = 2.5;
+//         ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+//       }
+//       for (let i = 11; i <= 32; i++) {
+//         if (!pose[i]) continue;
+//         const [x, y] = poseXY(pose[i]);
+//         const isWrist = i === 15 || i === 16;
+//         ctx.beginPath(); ctx.arc(x, y, isWrist ? 5 : 4, 0, Math.PI * 2);
+//         ctx.fillStyle   = isWrist ? "#f472b6" : "#818cf8";
+//         ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+//     }
+
+//     const leftWrist  = pose?.[15] ? poseXY(pose[15]) : [W * 0.65, H * 0.62] as [number,number];
+//     const rightWrist = pose?.[16] ? poseXY(pose[16]) : [W * 0.35, H * 0.62] as [number,number];
+
+//     function drawHand(c: CanvasRenderingContext2D, lm: number[][], wx: number, wy: number, lineColor: string, dotColor: string) {
+//       if (!lm || lm.length < 21) return;
+//       c.lineCap = "round";
+//       c.lineJoin = "round";
+
+//       // Each finger as a chain of straight lines — exactly like the Python MediaPipe style
+//       // Chains: thumb=[0,1,2,3,4], index=[0,5,6,7,8], middle=[0,9,10,11,12],
+//       //         ring=[0,13,14,15,16], pinky=[0,17,18,19,20]
+//       // Palm cross-connections: 5-9, 9-13, 13-17
+//       const chains = [
+//         [0, 1, 2, 3, 4],       // thumb
+//         [0, 5, 6, 7, 8],       // index
+//         [0, 9, 10, 11, 12],    // middle
+//         [0, 13, 14, 15, 16],   // ring
+//         [0, 17, 18, 19, 20],   // pinky
+//       ];
+//       const palmLinks: [number, number][] = [[5,9],[9,13],[13,17]];
+
+//       // ── Bone lines ─────────────────────────────────────────
+//       c.strokeStyle = lineColor;
+//       // Slightly thicker near palm, thinner near fingertip
+//       chains.forEach((chain) => {
+//         for (let s = 0; s < chain.length - 1; s++) {
+//           const [ax, ay] = handXY(lm[chain[s]],   lm[0], wx, wy);
+//           const [bx, by] = handXY(lm[chain[s+1]], lm[0], wx, wy);
+//           // Thicker at palm (s=0), thinner near tip
+//           c.lineWidth = s === 0 ? 2.5 : s === 1 ? 2.0 : 1.6;
+//           c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+//         }
+//       });
+
+//       // Palm knuckle cross-bar
+//       c.lineWidth = 1.8;
+//       palmLinks.forEach(([a, b]) => {
+//         const [ax, ay] = handXY(lm[a], lm[0], wx, wy);
+//         const [bx, by] = handXY(lm[b], lm[0], wx, wy);
+//         c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+//       });
+
+//       // ── Joint dots ─────────────────────────────────────────
+//       for (let i = 0; i < 21; i++) {
+//         const [x, y] = handXY(lm[i], lm[0], wx, wy);
+//         // Tips (4,8,12,16,20) are white; knuckles are dotColor; wrist is larger
+//         const isTip   = [4, 8, 12, 16, 20].includes(i);
+//         const isWrist = i === 0;
+//         const r = isWrist ? 5 : isTip ? 3.5 : 2.5;
+//         c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2);
+//         c.fillStyle   = isTip ? "#ffffff" : dotColor;
+//         c.shadowColor = dotColor;
+//         c.shadowBlur  = isTip ? 10 : isWrist ? 14 : 5;
+//         c.fill();
+//         c.shadowBlur  = 0;
+//       }
+//     }
+
+//     if (left)  drawHand(ctx, left,  leftWrist[0],  leftWrist[1],  "rgba(251,191,36,0.75)",  "#fbbf24");
+//     if (right) drawHand(ctx, right, rightWrist[0], rightWrist[1], "rgba(52,211,153,0.75)",  "#34d399");
+
+//     // Legend
+//     ([["#818cf8","Pose"],["#fbbf24","Left Hand"],["#34d399","Right Hand"]] as [string,string][])
+//       .forEach(([color, label], i) => {
+//         ctx.beginPath(); ctx.arc(14, H - 14 - i * 18, 5, 0, Math.PI * 2);
+//         ctx.fillStyle = color; ctx.shadowBlur = 0; ctx.fill();
+//         ctx.fillStyle = "rgba(203,213,225,0.7)";
+//         ctx.font = "11px monospace"; ctx.fillText(label, 24, H - 10 - i * 18);
+//       });
+
+//     ctx.fillStyle = "rgba(129,140,248,0.45)";
+//     ctx.font = "10px monospace"; ctx.textAlign = "right";
+//     ctx.fillText(`${frameIdx + 1} / ${keypoints.length}`, W - 8, H - 8);
+//     ctx.textAlign = "left";
+//   }, [keypoints]);
+
+//   // Redraw whenever frameIndex changes
+//   useEffect(() => { draw(frameIndex); }, [frameIndex, draw]);
+
+//   // RAF loop for advancing frames
+//   useEffect(() => {
+//     cancelAnimationFrame(rafRef.current);
+//     lastTimeRef.current = 0;
+//     if (!isPlaying) return;
+
+//     const loop = (ts: number) => {
+//       if (!lastTimeRef.current) lastTimeRef.current = ts;
+//       if (ts - lastTimeRef.current >= frameInterval) {
+//         lastTimeRef.current = ts;
+//         if (frameIndexRef.current < totalRef.current - 1) {
+//           onFrameAdvance();
+//         }
+//       }
+//       rafRef.current = requestAnimationFrame(loop);
+//     };
+//     rafRef.current = requestAnimationFrame(loop);
+//     return () => cancelAnimationFrame(rafRef.current);
+//   }, [isPlaying, frameInterval, onFrameAdvance]);
+
+//   return (
+//     <canvas
+//       ref={canvasRef}
+//       width={520}
+//       height={400}
+//       style={{ width: "100%", height: "100%", display: "block" }}
+//     />
+//   );
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    PLAYBACK CONTROLS
+// ───────────────────────────────────────────────────────────── */
+// function PlaybackControls({
+//   isPlaying, onPlay, onPause, onReplay, frameIndex, total,
+// }: {
+//   isPlaying: boolean;
+//   onPlay: () => void;
+//   onPause: () => void;
+//   onReplay: () => void;
+//   frameIndex: number;
+//   total: number;
+// }) {
+//   const pct = total > 1 ? (frameIndex / (total - 1)) * 100 : 0;
+//   const base: React.CSSProperties = {
+//     display: "flex", alignItems: "center", justifyContent: "center",
+//     border: "none", cursor: "pointer", transition: "all 0.15s",
+//   };
+//   return (
+//     <div style={{
+//       display: "flex", flexDirection: "column", gap: "8px",
+//       padding: "10px 16px 12px", flexShrink: 0,
+//       background: "rgba(8,13,26,0.92)",
+//       borderTop: "1px solid rgba(99,102,241,0.18)",
+//     }}>
+//       {/* Progress bar */}
+//       <div style={{ height: "4px", borderRadius: "4px", background: "rgba(99,102,241,0.15)", overflow: "hidden" }}>
+//         <div style={{
+//           height: "100%", width: `${pct}%`,
+//           background: "linear-gradient(90deg, #6366f1, #a78bfa)",
+//           borderRadius: "4px", transition: "width 0.08s linear",
+//         }} />
+//       </div>
+//       {/* Buttons */}
+//       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "14px" }}>
+//         <button onClick={onReplay} title="Replay" style={{
+//           ...base, width: 36, height: 36, borderRadius: "50%",
+//           background: "rgba(99,102,241,0.12)",
+//           border: "1px solid rgba(99,102,241,0.35)",
+//           color: "#a78bfa", fontSize: "18px",
+//         }}
+//           onMouseEnter={e => (e.currentTarget.style.background = "rgba(99,102,241,0.28)")}
+//           onMouseLeave={e => (e.currentTarget.style.background = "rgba(99,102,241,0.12)")}
+//         >↺</button>
+
+//         {isPlaying ? (
+//           <button onClick={onPause} title="Pause" style={{
+//             ...base, width: 46, height: 46, borderRadius: "50%",
+//             background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+//             color: "#fff", fontSize: "20px",
+//             boxShadow: "0 0 20px rgba(99,102,241,0.5)",
+//           }}
+//             onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+//             onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+//           >⏸</button>
+//         ) : (
+//           <button onClick={onPlay} title="Play" style={{
+//             ...base, width: 46, height: 46, borderRadius: "50%",
+//             background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+//             color: "#fff", fontSize: "20px",
+//             boxShadow: "0 0 20px rgba(99,102,241,0.5)",
+//           }}
+//             onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+//             onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+//           >▶</button>
+//         )}
+
+//         <span style={{
+//           fontSize: "11px", fontFamily: "monospace",
+//           color: "rgba(129,140,248,0.5)", minWidth: "70px", textAlign: "center",
+//         }}>
+//           {total > 0 ? `${frameIndex + 1} / ${total}` : "no data"}
+//         </span>
+//       </div>
+//     </div>
+//   );
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    ROOT EXPORT
+// ───────────────────────────────────────────────────────────── */
+// export default function AvatarViewer({ keypoints, fps = 25 }: Props) {
+//   const [activeTab,  setActiveTab]  = useState<"avatar" | "skeleton">("avatar");
+//   const [isPlaying,  setIsPlaying]  = useState(false);
+//   const [frameIndex, setFrameIndex] = useState(0);
+
+//   const advanceFrame = useCallback(() => {
+//     setFrameIndex(prev => {
+//       const next = prev + 1;
+//       if (next >= keypoints.length - 1) setIsPlaying(false);
+//       return Math.min(next, keypoints.length - 1);
+//     });
+//   }, [keypoints.length]);
+
+//   useEffect(() => { setFrameIndex(0); setIsPlaying(false); }, [keypoints]);
+
+//   const tab = (active: boolean): React.CSSProperties => ({
+//     flex: 1, padding: "9px 0", border: "none", cursor: "pointer",
+//     background: active ? "rgba(99,102,241,0.2)" : "transparent",
+//     borderBottom: `2px solid ${active ? "#818cf8" : "transparent"}`,
+//     color: active ? "#c7d2fe" : "rgba(148,163,184,0.5)",
+//     fontWeight: active ? 600 : 400, fontSize: "13px",
+//     letterSpacing: "0.04em", transition: "all 0.18s",
+//   });
+
+//   return (
+//     <div style={{
+//       display: "flex", flexDirection: "column",
+//       height: "100%", width: "100%",
+//       background: "#080d1a",
+//     }}>
+//       {/* TAB BAR */}
+//       <div style={{
+//         display: "flex", flexShrink: 0,
+//         background: "rgba(8,13,26,0.98)",
+//         borderBottom: "1px solid rgba(99,102,241,0.18)",
+//       }}>
+//         <button style={tab(activeTab === "avatar")}   onClick={() => setActiveTab("avatar")}>
+//           🧍 Avatar
+//         </button>
+//         <button style={tab(activeTab === "skeleton")} onClick={() => setActiveTab("skeleton")}>
+//           🦴 Skeleton
+//         </button>
+//       </div>
+
+//       {/* VIEWER */}
+//       <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
+
+//         {/* Avatar */}
+//         <div style={{ position: "absolute", inset: 0, display: activeTab === "avatar" ? "block" : "none" }}>
+//           <Canvas camera={{ position: [0, 1, 3], fov: 50 }}>
+//             <ambientLight intensity={0.6} />
+//             <directionalLight position={[2, 4, 3]} intensity={1.4} />
+//             <AnimatedAvatar
+//               keypoints={keypoints} fps={fps}
+//               isPlaying={isPlaying} frameIndex={frameIndex}
+//               onFrameAdvance={advanceFrame}
+//             />
+//           </Canvas>
+//         </div>
+
+//         {/* Skeleton */}
+//         <div style={{
+//           position: "absolute", inset: 0,
+//           display: activeTab === "skeleton" ? "flex" : "none",
+//           alignItems: "center", justifyContent: "center",
+//         }}>
+//           {keypoints.length > 0 ? (
+//             <SkeletonViewer
+//               keypoints={keypoints} fps={fps}
+//               isPlaying={isPlaying} frameIndex={frameIndex}
+//               onFrameAdvance={advanceFrame}
+//             />
+//           ) : (
+//             <div style={{ textAlign: "center", color: "rgba(148,163,184,0.4)" }}>
+//               <div style={{ fontSize: "36px", marginBottom: "8px" }}>🦴</div>
+//               <div style={{ fontSize: "13px" }}>No keypoints loaded yet</div>
+//             </div>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* CONTROLS */}
+//       <PlaybackControls
+//         isPlaying={isPlaying}
+//         onPlay={() => setIsPlaying(true)}
+//         onPause={() => setIsPlaying(false)}
+//         onReplay={() => { setFrameIndex(0); setIsPlaying(true); }}
+//         frameIndex={frameIndex}
+//         total={keypoints.length}
+//       />
+//     </div>
+//   );
+// }
+
+
+// import { Canvas, useFrame } from "@react-three/fiber";
+// import { useGLTF } from "@react-three/drei";
+// import { useEffect, useRef, useState, useCallback } from "react";
+// import * as THREE from "three";
+
+// interface Props {
+//   keypoints: any[];
+//   fps?: number;
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    MIXAMO BONE MAP
+// ───────────────────────────────────────────────────────────── */
+// const BONES = {
+//   l_upperarm: "LeftArm",
+//   l_forearm:  "LeftForeArm",
+//   l_hand:     "LeftHand",
+//   r_upperarm: "RightArm",
+//   r_forearm:  "RightForeArm",
+//   r_hand:     "RightHand",
+//   l_thumb1: "LeftHandThumb1",  l_thumb2: "LeftHandThumb2",  l_thumb3: "LeftHandThumb3",
+//   l_index1: "LeftHandIndex1",  l_index2: "LeftHandIndex2",  l_index3: "LeftHandIndex3",
+//   l_mid1:   "LeftHandMiddle1", l_mid2:   "LeftHandMiddle2", l_mid3:   "LeftHandMiddle3",
+//   l_ring1:  "LeftHandRing1",   l_ring2:  "LeftHandRing2",   l_ring3:  "LeftHandRing3",
+//   l_pinky1: "LeftHandPinky1",  l_pinky2: "LeftHandPinky2",  l_pinky3: "LeftHandPinky3",
+//   r_thumb1: "RightHandThumb1", r_thumb2: "RightHandThumb2", r_thumb3: "RightHandThumb3",
+//   r_index1: "RightHandIndex1", r_index2: "RightHandIndex2", r_index3: "RightHandIndex3",
+//   r_mid1:   "RightHandMiddle1",r_mid2:   "RightHandMiddle2",r_mid3:   "RightHandMiddle3",
+//   r_ring1:  "RightHandRing1",  r_ring2:  "RightHandRing2",  r_ring3:  "RightHandRing3",
+//   r_pinky1: "RightHandPinky1", r_pinky2: "RightHandPinky2", r_pinky3: "RightHandPinky3",
+// } as const;
+
+// /* ─────────────────────────────────────────────────────────────
+//    MEDIAPIPE HELPERS
+// ───────────────────────────────────────────────────────────── */
+// function mpToWorld(p: number[]): THREE.Vector3 {
+//   return new THREE.Vector3(-p[0], -p[1], p[2]);
+// }
+// function mpDir(a: number[], b: number[]): THREE.Vector3 {
+//   return mpToWorld(b).sub(mpToWorld(a)).normalize();
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    ANIMATED AVATAR (3-D)
+// ───────────────────────────────────────────────────────────── */
+// function AnimatedAvatar({
+//   keypoints,
+//   fps = 25,
+//   isPlaying,
+//   frameIndex,
+//   onFrameAdvance,
+// }: Props & {
+//   isPlaying: boolean;
+//   frameIndex: number;
+//   onFrameAdvance: () => void;
+// }) {
+//   const { scene } = useGLTF("/avatar.glb");
+//   const bonesRef   = useRef<Record<string, THREE.Bone>>({});
+//   const restDir    = useRef<Record<string, THREE.Vector3>>({});
+//   const restLocalQ = useRef<Record<string, THREE.Quaternion>>({});
+//   const elapsed    = useRef(0);
+//   const frameInterval = 1 / fps;
+
+//   useEffect(() => {
+//     scene.traverse((obj) => {
+//       if (!(obj as THREE.Bone).isBone) return;
+//       const bone = obj as THREE.Bone;
+//       bonesRef.current[bone.name]   = bone;
+//       restLocalQ.current[bone.name] = bone.quaternion.clone();
+//     });
+//     scene.traverse((obj) => {
+//       if (!(obj as THREE.Bone).isBone) return;
+//       const bone = obj as THREE.Bone;
+//       const childBone = bone.children.find(c => (c as THREE.Bone).isBone) as THREE.Object3D | undefined;
+//       if (childBone) {
+//         const bPos = new THREE.Vector3();
+//         const cPos = new THREE.Vector3();
+//         bone.getWorldPosition(bPos);
+//         childBone.getWorldPosition(cPos);
+//         restDir.current[bone.name] = cPos.sub(bPos).normalize();
+//       }
+//     });
+//   }, [scene]);
+
+//   useEffect(() => { elapsed.current = 0; }, [keypoints]);
+
+//   function rotateBoneToward(boneName: string, targetDir: THREE.Vector3, alpha = 1.0) {
+//     const bone  = bonesRef.current[boneName];
+//     const rDir  = restDir.current[boneName];
+//     const restQ = restLocalQ.current[boneName];
+//     if (!bone || !rDir || !restQ || targetDir.lengthSq() < 0.001) return;
+//     bone.quaternion.copy(restQ);
+//     const restWorldQ = new THREE.Quaternion();
+//     bone.getWorldQuaternion(restWorldQ);
+//     const dot = rDir.dot(targetDir);
+//     if (dot < -0.9999) {
+//       const perp = Math.abs(rDir.x) < 0.9 ? new THREE.Vector3(1,0,0) : new THREE.Vector3(0,1,0);
+//       const axis = new THREE.Vector3().crossVectors(rDir, perp).normalize();
+//       const delta180 = new THREE.Quaternion().setFromAxisAngle(axis, Math.PI);
+//       const desired  = delta180.multiply(restWorldQ);
+//       const parentWorldQ = new THREE.Quaternion();
+//       if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQ);
+//       bone.quaternion.copy(parentWorldQ.invert().multiply(desired));
+//       return;
+//     }
+//     const delta = new THREE.Quaternion().setFromUnitVectors(rDir, targetDir);
+//     const desiredWorldQ = delta.multiply(restWorldQ);
+//     const parentWorldQ  = new THREE.Quaternion();
+//     if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQ);
+//     bone.quaternion.slerp(parentWorldQ.invert().multiply(desiredWorldQ), alpha);
+//   }
+
+//   function driveFinger(lm: number[][], mcp: number, pip: number, dip: number, tip: number,
+//     b1: string, b2: string, b3: string) {
+//     rotateBoneToward(b1, mpDir(lm[mcp], lm[pip]));
+//     rotateBoneToward(b2, mpDir(lm[pip], lm[dip]));
+//     rotateBoneToward(b3, mpDir(lm[dip], lm[tip]));
+//   }
+
+//   function driveHand(hand: number[][], side: "l" | "r") {
+//     if (!hand || hand.length < 21) return;
+//     const s = side;
+//     rotateBoneToward(BONES[`${s}_hand`], mpDir(hand[0], hand[9]));
+//     driveFinger(hand,1,2,3,4,     BONES[`${s}_thumb1`],BONES[`${s}_thumb2`],BONES[`${s}_thumb3`]);
+//     driveFinger(hand,5,6,7,8,     BONES[`${s}_index1`],BONES[`${s}_index2`],BONES[`${s}_index3`]);
+//     driveFinger(hand,9,10,11,12,  BONES[`${s}_mid1`],  BONES[`${s}_mid2`],  BONES[`${s}_mid3`]);
+//     driveFinger(hand,13,14,15,16, BONES[`${s}_ring1`], BONES[`${s}_ring2`], BONES[`${s}_ring3`]);
+//     driveFinger(hand,17,18,19,20, BONES[`${s}_pinky1`],BONES[`${s}_pinky2`],BONES[`${s}_pinky3`]);
+//   }
+
+//   useFrame((_, delta) => {
+//     if (!isPlaying || !keypoints?.length) return;
+//     elapsed.current += Math.min(delta, 0.1);
+//     if (elapsed.current >= frameInterval) {
+//       elapsed.current = 0;
+//       if (frameIndex < keypoints.length - 1) onFrameAdvance();
+//     }
+//     const frame = keypoints[frameIndex];
+//     if (!frame) return;
+//     const pose  = frame.pose       as number[][] | undefined;
+//     const left  = frame.left_hand  as number[][] | undefined;
+//     const right = frame.right_hand as number[][] | undefined;
+//     if (pose && pose.length >= 17) {
+//       rotateBoneToward(BONES.r_upperarm, mpDir(pose[11], pose[13]));
+//       rotateBoneToward(BONES.r_forearm,  mpDir(pose[13], pose[15]));
+//       rotateBoneToward(BONES.l_upperarm, mpDir(pose[12], pose[14]));
+//       rotateBoneToward(BONES.l_forearm,  mpDir(pose[14], pose[16]));
+//     }
+//     if (left)  driveHand(left,  "r");
+//     if (right) driveHand(right, "l");
+//   });
+
+//   return (
+//     <group position={[0, -0.8, 0]}>
+//       <primitive object={scene} scale={1} />
+//     </group>
+//   );
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    SKELETON CONNECTIONS
+// ───────────────────────────────────────────────────────────── */
+// const POSE_CONNECTIONS: [number, number][] = [
+//   [11,12],[11,13],[13,15],[12,14],[14,16],
+//   [11,23],[12,24],[23,24],[23,25],[24,26],
+//   [25,27],[26,28],[27,29],[28,30],[29,31],[30,32],
+// ];
+// const HAND_CONNECTIONS: [number, number][] = [
+//   [0,1],[1,2],[2,3],[3,4],
+//   [0,5],[5,6],[6,7],[7,8],
+//   [0,9],[9,10],[10,11],[11,12],
+//   [0,13],[13,14],[14,15],[15,16],
+//   [0,17],[17,18],[18,19],[19,20],
+//   [5,9],[9,13],[13,17],
+// ];
+
+// /* ─────────────────────────────────────────────────────────────
+//    SKELETON VIEWER (2-D canvas)
+// ───────────────────────────────────────────────────────────── */
+// function SkeletonViewer({
+//   keypoints,
+//   fps,
+//   isPlaying,
+//   frameIndex,
+//   onFrameAdvance,
+// }: {
+//   keypoints: any[];
+//   fps: number;
+//   isPlaying: boolean;
+//   frameIndex: number;
+//   onFrameAdvance: () => void;
+// }) {
+//   const canvasRef    = useRef<HTMLCanvasElement>(null);
+//   const rafRef       = useRef<number>(0);
+//   const lastTimeRef  = useRef<number>(0);
+//   const frameInterval = 1000 / fps;
+
+//   // Keep a ref to the latest values so RAF closure stays fresh
+//   const isPlayingRef   = useRef(isPlaying);
+//   const frameIndexRef  = useRef(frameIndex);
+//   const totalRef       = useRef(keypoints.length);
+//   useEffect(() => { isPlayingRef.current  = isPlaying;       }, [isPlaying]);
+//   useEffect(() => { frameIndexRef.current = frameIndex;      }, [frameIndex]);
+//   useEffect(() => { totalRef.current      = keypoints.length;}, [keypoints.length]);
+
+//   // ── draw one frame ──────────────────────────────────────
+//   const draw = useCallback((frameIdx: number) => {
+//     const canvas = canvasRef.current;
+//     if (!canvas) return;
+//     const ctx = canvas.getContext("2d");
+//     if (!ctx) return;
+
+//     const W = canvas.width;
+//     const H = canvas.height;
+
+//     ctx.fillStyle = "#080d1a";
+//     ctx.fillRect(0, 0, W, H);
+//     ctx.strokeStyle = "rgba(99,102,241,0.08)";
+//     ctx.lineWidth = 1;
+//     for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+//     for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+//     const frame = keypoints[frameIdx];
+//     if (!frame) return;
+
+//     const pose  = frame.pose       as number[][] | undefined;
+//     const left  = frame.left_hand  as number[][] | undefined;
+//     const right = frame.right_hand as number[][] | undefined;
+
+//     // pose world coords: negate x to mirror for viewer, keep y natural (up = up)
+//     function poseXY(pt: number[]): [number, number] {
+//       return [(-pt[0] * 0.55 + 0.5) * W, (pt[1] * 0.55 + 0.38) * H];
+//     }
+//     // Hand landmarks are in world space (metres), wrist-relative after subtracting lm[0].
+//     // Use the SAME scale as poseXY (0.55 * canvas dimension) so the hand
+//     // sits flush against the pose wrist with no gap or overlap.
+//     function handXY(pt: number[], wristLm: number[], wx: number, wy: number): [number, number] {
+//       const rx = pt[0] - wristLm[0]; // relative to wrist landmark
+//       const ry = pt[1] - wristLm[1];
+//       return [wx + rx * 0.75 * W, wy + ry * 0.75 * H];
+//     }
+
+//     // ── Face (landmarks 0–10) ──────────────────────────────
+//     if (pose && pose.length >= 11) {
+//       const nose   = pose[0]  ? poseXY(pose[0])  : null;
+//       const lEye   = pose[2]  ? poseXY(pose[2])  : null;
+//       const rEye   = pose[5]  ? poseXY(pose[5])  : null;
+//       const lEar   = pose[7]  ? poseXY(pose[7])  : null;
+//       const rEar   = pose[8]  ? poseXY(pose[8])  : null;
+//       const mouthL = pose[9]  ? poseXY(pose[9])  : null;
+//       const mouthR = pose[10] ? poseXY(pose[10]) : null;
+
+//       // Head circle from ear span
+//       if (lEar && rEar) {
+//         const hcx = (lEar[0] + rEar[0]) / 2;
+//         const hcy = (lEar[1] + rEar[1]) / 2;
+//         const hr  = Math.hypot(lEar[0] - rEar[0], lEar[1] - rEar[1]) * 0.65;
+//         ctx.beginPath(); ctx.arc(hcx, hcy, hr, 0, Math.PI * 2);
+//         ctx.strokeStyle = "rgba(167,139,250,0.45)"; ctx.lineWidth = 1.5; ctx.stroke();
+//       }
+
+//       // Nose → eye guide lines
+//       if (nose && lEye) {
+//         ctx.beginPath(); ctx.moveTo(nose[0], nose[1]); ctx.lineTo(lEye[0], lEye[1]);
+//         ctx.strokeStyle = "rgba(167,139,250,0.25)"; ctx.lineWidth = 1; ctx.stroke();
+//       }
+//       if (nose && rEye) {
+//         ctx.beginPath(); ctx.moveTo(nose[0], nose[1]); ctx.lineTo(rEye[0], rEye[1]);
+//         ctx.strokeStyle = "rgba(167,139,250,0.25)"; ctx.lineWidth = 1; ctx.stroke();
+//       }
+
+//       // Mouth
+//       if (mouthL && mouthR) {
+//         ctx.beginPath(); ctx.moveTo(mouthL[0], mouthL[1]); ctx.lineTo(mouthR[0], mouthR[1]);
+//         ctx.strokeStyle = "rgba(244,114,182,0.85)"; ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.stroke();
+//       }
+
+//       // Eyes
+//       for (const eye of [lEye, rEye]) {
+//         if (!eye) continue;
+//         ctx.beginPath(); ctx.arc(eye[0], eye[1], 3.5, 0, Math.PI * 2);
+//         ctx.fillStyle = "#a5b4fc"; ctx.shadowColor = "#818cf8"; ctx.shadowBlur = 8;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+
+//       // Ears
+//       for (const ear of [lEar, rEar]) {
+//         if (!ear) continue;
+//         ctx.beginPath(); ctx.arc(ear[0], ear[1], 3, 0, Math.PI * 2);
+//         ctx.fillStyle = "#818cf8"; ctx.fill();
+//       }
+
+//       // Nose
+//       if (nose) {
+//         ctx.beginPath(); ctx.arc(nose[0], nose[1], 3, 0, Math.PI * 2);
+//         ctx.fillStyle = "#c4b5fd"; ctx.shadowColor = "#a78bfa"; ctx.shadowBlur = 6;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+//     }
+
+//     // ── Body skeleton (landmarks 11+) ──────────────────────
+//     if (pose && pose.length >= 17) {
+//       ctx.lineCap = "round";
+//       for (const [a, b] of POSE_CONNECTIONS) {
+//         if (!pose[a] || !pose[b]) continue;
+//         const [ax, ay] = poseXY(pose[a]);
+//         const [bx, by] = poseXY(pose[b]);
+//         const grad = ctx.createLinearGradient(ax, ay, bx, by);
+//         grad.addColorStop(0, "rgba(99,102,241,0.9)");
+//         grad.addColorStop(1, "rgba(167,139,250,0.9)");
+//         ctx.strokeStyle = grad; ctx.lineWidth = 2.5;
+//         ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+//       }
+//       for (let i = 11; i <= 32; i++) {
+//         if (!pose[i]) continue;
+//         const [x, y] = poseXY(pose[i]);
+//         const isWrist = i === 15 || i === 16;
+//         ctx.beginPath(); ctx.arc(x, y, isWrist ? 5 : 4, 0, Math.PI * 2);
+//         ctx.fillStyle   = isWrist ? "#f472b6" : "#818cf8";
+//         ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+//     }
+
+//     const leftWrist  = pose?.[15] ? poseXY(pose[15]) : [W * 0.65, H * 0.62] as [number,number];
+//     const rightWrist = pose?.[16] ? poseXY(pose[16]) : [W * 0.35, H * 0.62] as [number,number];
+
+//     function drawHand(c: CanvasRenderingContext2D, lm: number[][], wx: number, wy: number, lineColor: string, dotColor: string) {
+//       if (!lm || lm.length < 21) return;
+//       c.lineCap = "round";
+//       c.lineJoin = "round";
+
+//       // Each finger as a chain of straight lines — exactly like the Python MediaPipe style
+//       // Chains: thumb=[0,1,2,3,4], index=[0,5,6,7,8], middle=[0,9,10,11,12],
+//       //         ring=[0,13,14,15,16], pinky=[0,17,18,19,20]
+//       // Palm cross-connections: 5-9, 9-13, 13-17
+//       const chains = [
+//         [0, 1, 2, 3, 4],       // thumb
+//         [0, 5, 6, 7, 8],       // index
+//         [0, 9, 10, 11, 12],    // middle
+//         [0, 13, 14, 15, 16],   // ring
+//         [0, 17, 18, 19, 20],   // pinky
+//       ];
+//       const palmLinks: [number, number][] = [[5,9],[9,13],[13,17]];
+
+//       // ── Bone lines ─────────────────────────────────────────
+//       c.strokeStyle = lineColor;
+//       // Slightly thicker near palm, thinner near fingertip
+//       chains.forEach((chain) => {
+//         for (let s = 0; s < chain.length - 1; s++) {
+//           const [ax, ay] = handXY(lm[chain[s]],   lm[0], wx, wy);
+//           const [bx, by] = handXY(lm[chain[s+1]], lm[0], wx, wy);
+//           // Thicker at palm (s=0), thinner near tip
+//           c.lineWidth = s === 0 ? 2.5 : s === 1 ? 2.0 : 1.6;
+//           c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+//         }
+//       });
+
+//       // Palm knuckle cross-bar
+//       c.lineWidth = 1.8;
+//       palmLinks.forEach(([a, b]) => {
+//         const [ax, ay] = handXY(lm[a], lm[0], wx, wy);
+//         const [bx, by] = handXY(lm[b], lm[0], wx, wy);
+//         c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+//       });
+
+//       // ── Joint dots ─────────────────────────────────────────
+//       for (let i = 0; i < 21; i++) {
+//         const [x, y] = handXY(lm[i], lm[0], wx, wy);
+//         // Tips (4,8,12,16,20) are white; knuckles are dotColor; wrist is larger
+//         const isTip   = [4, 8, 12, 16, 20].includes(i);
+//         const isWrist = i === 0;
+//         const r = isWrist ? 5 : isTip ? 3.5 : 2.5;
+//         c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2);
+//         c.fillStyle   = isTip ? "#ffffff" : dotColor;
+//         c.shadowColor = dotColor;
+//         c.shadowBlur  = isTip ? 10 : isWrist ? 14 : 5;
+//         c.fill();
+//         c.shadowBlur  = 0;
+//       }
+//     }
+
+//     if (left)  drawHand(ctx, left,  rightWrist[0], rightWrist[1], "rgba(251,191,36,0.75)",  "#fbbf24");
+//     if (right) drawHand(ctx, right, leftWrist[0],  leftWrist[1],  "rgba(52,211,153,0.75)",  "#34d399");
+
+//     // Legend
+//     ([["#818cf8","Pose"],["#fbbf24","Left Hand"],["#34d399","Right Hand"]] as [string,string][])
+//       .forEach(([color, label], i) => {
+//         ctx.beginPath(); ctx.arc(14, H - 14 - i * 18, 5, 0, Math.PI * 2);
+//         ctx.fillStyle = color; ctx.shadowBlur = 0; ctx.fill();
+//         ctx.fillStyle = "rgba(203,213,225,0.7)";
+//         ctx.font = "11px monospace"; ctx.fillText(label, 24, H - 10 - i * 18);
+//       });
+
+//     ctx.fillStyle = "rgba(129,140,248,0.45)";
+//     ctx.font = "10px monospace"; ctx.textAlign = "right";
+//     ctx.fillText(`${frameIdx + 1} / ${keypoints.length}`, W - 8, H - 8);
+//     ctx.textAlign = "left";
+//   }, [keypoints]);
+
+//   // Redraw whenever frameIndex changes
+//   useEffect(() => { draw(frameIndex); }, [frameIndex, draw]);
+
+//   // RAF loop for advancing frames
+//   useEffect(() => {
+//     cancelAnimationFrame(rafRef.current);
+//     lastTimeRef.current = 0;
+//     if (!isPlaying) return;
+
+//     const loop = (ts: number) => {
+//       if (!lastTimeRef.current) lastTimeRef.current = ts;
+//       if (ts - lastTimeRef.current >= frameInterval) {
+//         lastTimeRef.current = ts;
+//         if (frameIndexRef.current < totalRef.current - 1) {
+//           onFrameAdvance();
+//         }
+//       }
+//       rafRef.current = requestAnimationFrame(loop);
+//     };
+//     rafRef.current = requestAnimationFrame(loop);
+//     return () => cancelAnimationFrame(rafRef.current);
+//   }, [isPlaying, frameInterval, onFrameAdvance]);
+
+//   return (
+//     <canvas
+//       ref={canvasRef}
+//       width={520}
+//       height={400}
+//       style={{ width: "100%", height: "100%", display: "block" }}
+//     />
+//   );
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    PLAYBACK CONTROLS
+// ───────────────────────────────────────────────────────────── */
+// function PlaybackControls({
+//   isPlaying, onPlay, onPause, onReplay, frameIndex, total,
+// }: {
+//   isPlaying: boolean;
+//   onPlay: () => void;
+//   onPause: () => void;
+//   onReplay: () => void;
+//   frameIndex: number;
+//   total: number;
+// }) {
+//   const pct = total > 1 ? (frameIndex / (total - 1)) * 100 : 0;
+//   const base: React.CSSProperties = {
+//     display: "flex", alignItems: "center", justifyContent: "center",
+//     border: "none", cursor: "pointer", transition: "all 0.15s",
+//   };
+//   return (
+//     <div style={{
+//       display: "flex", flexDirection: "column", gap: "8px",
+//       padding: "10px 16px 12px", flexShrink: 0,
+//       background: "rgba(8,13,26,0.92)",
+//       borderTop: "1px solid rgba(99,102,241,0.18)",
+//     }}>
+//       {/* Progress bar */}
+//       <div style={{ height: "4px", borderRadius: "4px", background: "rgba(99,102,241,0.15)", overflow: "hidden" }}>
+//         <div style={{
+//           height: "100%", width: `${pct}%`,
+//           background: "linear-gradient(90deg, #6366f1, #a78bfa)",
+//           borderRadius: "4px", transition: "width 0.08s linear",
+//         }} />
+//       </div>
+//       {/* Buttons */}
+//       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "14px" }}>
+//         <button onClick={onReplay} title="Replay" style={{
+//           ...base, width: 36, height: 36, borderRadius: "50%",
+//           background: "rgba(99,102,241,0.12)",
+//           border: "1px solid rgba(99,102,241,0.35)",
+//           color: "#a78bfa", fontSize: "18px",
+//         }}
+//           onMouseEnter={e => (e.currentTarget.style.background = "rgba(99,102,241,0.28)")}
+//           onMouseLeave={e => (e.currentTarget.style.background = "rgba(99,102,241,0.12)")}
+//         >↺</button>
+
+//         {isPlaying ? (
+//           <button onClick={onPause} title="Pause" style={{
+//             ...base, width: 46, height: 46, borderRadius: "50%",
+//             background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+//             color: "#fff", fontSize: "20px",
+//             boxShadow: "0 0 20px rgba(99,102,241,0.5)",
+//           }}
+//             onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+//             onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+//           >⏸</button>
+//         ) : (
+//           <button onClick={onPlay} title="Play" style={{
+//             ...base, width: 46, height: 46, borderRadius: "50%",
+//             background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+//             color: "#fff", fontSize: "20px",
+//             boxShadow: "0 0 20px rgba(99,102,241,0.5)",
+//           }}
+//             onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+//             onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+//           >▶</button>
+//         )}
+
+//         <span style={{
+//           fontSize: "11px", fontFamily: "monospace",
+//           color: "rgba(129,140,248,0.5)", minWidth: "70px", textAlign: "center",
+//         }}>
+//           {total > 0 ? `${frameIndex + 1} / ${total}` : "no data"}
+//         </span>
+//       </div>
+//     </div>
+//   );
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    ROOT EXPORT
+// ───────────────────────────────────────────────────────────── */
+// export default function AvatarViewer({ keypoints, fps = 25 }: Props) {
+//   const [activeTab,  setActiveTab]  = useState<"avatar" | "skeleton">("avatar");
+//   const [isPlaying,  setIsPlaying]  = useState(false);
+//   const [frameIndex, setFrameIndex] = useState(0);
+
+//   const advanceFrame = useCallback(() => {
+//     setFrameIndex(prev => {
+//       const next = prev + 1;
+//       if (next >= keypoints.length - 1) setIsPlaying(false);
+//       return Math.min(next, keypoints.length - 1);
+//     });
+//   }, [keypoints.length]);
+
+//   useEffect(() => { setFrameIndex(0); setIsPlaying(false); }, [keypoints]);
+
+//   const tab = (active: boolean): React.CSSProperties => ({
+//     flex: 1, padding: "9px 0", border: "none", cursor: "pointer",
+//     background: active ? "rgba(99,102,241,0.2)" : "transparent",
+//     borderBottom: `2px solid ${active ? "#818cf8" : "transparent"}`,
+//     color: active ? "#c7d2fe" : "rgba(148,163,184,0.5)",
+//     fontWeight: active ? 600 : 400, fontSize: "13px",
+//     letterSpacing: "0.04em", transition: "all 0.18s",
+//   });
+
+//   return (
+//     <div style={{
+//       display: "flex", flexDirection: "column",
+//       height: "100%", width: "100%",
+//       background: "#080d1a",
+//     }}>
+//       {/* TAB BAR */}
+//       <div style={{
+//         display: "flex", flexShrink: 0,
+//         background: "rgba(8,13,26,0.98)",
+//         borderBottom: "1px solid rgba(99,102,241,0.18)",
+//       }}>
+//         <button style={tab(activeTab === "avatar")}   onClick={() => setActiveTab("avatar")}>
+//           🧍 Avatar
+//         </button>
+//         <button style={tab(activeTab === "skeleton")} onClick={() => setActiveTab("skeleton")}>
+//           🦴 Skeleton
+//         </button>
+//       </div>
+
+//       {/* VIEWER */}
+//       <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
+
+//         {/* Avatar */}
+//         <div style={{ position: "absolute", inset: 0, display: activeTab === "avatar" ? "block" : "none" }}>
+//           <Canvas camera={{ position: [0, 1, 3], fov: 50 }}>
+//             <ambientLight intensity={0.6} />
+//             <directionalLight position={[2, 4, 3]} intensity={1.4} />
+//             <AnimatedAvatar
+//               keypoints={keypoints} fps={fps}
+//               isPlaying={isPlaying} frameIndex={frameIndex}
+//               onFrameAdvance={advanceFrame}
+//             />
+//           </Canvas>
+//         </div>
+
+//         {/* Skeleton */}
+//         <div style={{
+//           position: "absolute", inset: 0,
+//           display: activeTab === "skeleton" ? "flex" : "none",
+//           alignItems: "center", justifyContent: "center",
+//         }}>
+//           {keypoints.length > 0 ? (
+//             <SkeletonViewer
+//               keypoints={keypoints} fps={fps}
+//               isPlaying={isPlaying} frameIndex={frameIndex}
+//               onFrameAdvance={advanceFrame}
+//             />
+//           ) : (
+//             <div style={{ textAlign: "center", color: "rgba(148,163,184,0.4)" }}>
+//               <div style={{ fontSize: "36px", marginBottom: "8px" }}>🦴</div>
+//               <div style={{ fontSize: "13px" }}>No keypoints loaded yet</div>
+//             </div>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* CONTROLS */}
+//       <PlaybackControls
+//         isPlaying={isPlaying}
+//         onPlay={() => setIsPlaying(true)}
+//         onPause={() => setIsPlaying(false)}
+//         onReplay={() => { setFrameIndex(0); setIsPlaying(true); }}
+//         frameIndex={frameIndex}
+//         total={keypoints.length}
+//       />
+//     </div>
+//   );
+// }
+
+// import { Canvas, useFrame } from "@react-three/fiber";
+// import { useGLTF } from "@react-three/drei";
+// import { useEffect, useRef, useState, useCallback } from "react";
+// import * as THREE from "three";
+
+// interface Props {
+//   keypoints: any[];
+//   fps?: number;
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    MIXAMO BONE MAP
+// ───────────────────────────────────────────────────────────── */
+// const BONES = {
+//   l_upperarm: "LeftArm",
+//   l_forearm:  "LeftForeArm",
+//   l_hand:     "LeftHand",
+//   r_upperarm: "RightArm",
+//   r_forearm:  "RightForeArm",
+//   r_hand:     "RightHand",
+//   l_thumb1: "LeftHandThumb1",  l_thumb2: "LeftHandThumb2",  l_thumb3: "LeftHandThumb3",
+//   l_index1: "LeftHandIndex1",  l_index2: "LeftHandIndex2",  l_index3: "LeftHandIndex3",
+//   l_mid1:   "LeftHandMiddle1", l_mid2:   "LeftHandMiddle2", l_mid3:   "LeftHandMiddle3",
+//   l_ring1:  "LeftHandRing1",   l_ring2:  "LeftHandRing2",   l_ring3:  "LeftHandRing3",
+//   l_pinky1: "LeftHandPinky1",  l_pinky2: "LeftHandPinky2",  l_pinky3: "LeftHandPinky3",
+//   r_thumb1: "RightHandThumb1", r_thumb2: "RightHandThumb2", r_thumb3: "RightHandThumb3",
+//   r_index1: "RightHandIndex1", r_index2: "RightHandIndex2", r_index3: "RightHandIndex3",
+//   r_mid1:   "RightHandMiddle1",r_mid2:   "RightHandMiddle2",r_mid3:   "RightHandMiddle3",
+//   r_ring1:  "RightHandRing1",  r_ring2:  "RightHandRing2",  r_ring3:  "RightHandRing3",
+//   r_pinky1: "RightHandPinky1", r_pinky2: "RightHandPinky2", r_pinky3: "RightHandPinky3",
+// } as const;
+
+// /* ─────────────────────────────────────────────────────────────
+//    MEDIAPIPE HELPERS
+// ───────────────────────────────────────────────────────────── */
+// function mpToWorld(p: number[]): THREE.Vector3 {
+//   return new THREE.Vector3(-p[0], -p[1], p[2]);
+// }
+// function mpDir(a: number[], b: number[]): THREE.Vector3 {
+//   return mpToWorld(b).sub(mpToWorld(a)).normalize();
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    ANIMATED AVATAR (3-D)
+// ───────────────────────────────────────────────────────────── */
+// function AnimatedAvatar({
+//   keypoints,
+//   fps = 25,
+//   isPlaying,
+//   frameIndex,
+//   onFrameAdvance,
+// }: Props & {
+//   isPlaying: boolean;
+//   frameIndex: number;
+//   onFrameAdvance: () => void;
+// }) {
+//   const { scene } = useGLTF("/avatar.glb");
+//   const bonesRef   = useRef<Record<string, THREE.Bone>>({});
+//   const restDir    = useRef<Record<string, THREE.Vector3>>({});
+//   const restLocalQ = useRef<Record<string, THREE.Quaternion>>({});
+//   const elapsed    = useRef(0);
+//   const frameInterval = 1 / fps;
+
+//   useEffect(() => {
+//     scene.traverse((obj) => {
+//       if (!(obj as THREE.Bone).isBone) return;
+//       const bone = obj as THREE.Bone;
+//       bonesRef.current[bone.name]   = bone;
+//       restLocalQ.current[bone.name] = bone.quaternion.clone();
+//     });
+//     scene.traverse((obj) => {
+//       if (!(obj as THREE.Bone).isBone) return;
+//       const bone = obj as THREE.Bone;
+//       const childBone = bone.children.find(c => (c as THREE.Bone).isBone) as THREE.Object3D | undefined;
+//       if (childBone) {
+//         const bPos = new THREE.Vector3();
+//         const cPos = new THREE.Vector3();
+//         bone.getWorldPosition(bPos);
+//         childBone.getWorldPosition(cPos);
+//         restDir.current[bone.name] = cPos.sub(bPos).normalize();
+//       }
+//     });
+//   }, [scene]);
+
+//   useEffect(() => { elapsed.current = 0; }, [keypoints]);
+
+//   function rotateBoneToward(boneName: string, targetDir: THREE.Vector3, alpha = 1.0) {
+//     const bone  = bonesRef.current[boneName];
+//     const rDir  = restDir.current[boneName];
+//     const restQ = restLocalQ.current[boneName];
+//     if (!bone || !rDir || !restQ || targetDir.lengthSq() < 0.001) return;
+//     bone.quaternion.copy(restQ);
+//     const restWorldQ = new THREE.Quaternion();
+//     bone.getWorldQuaternion(restWorldQ);
+//     const dot = rDir.dot(targetDir);
+//     if (dot < -0.9999) {
+//       const perp = Math.abs(rDir.x) < 0.9 ? new THREE.Vector3(1,0,0) : new THREE.Vector3(0,1,0);
+//       const axis = new THREE.Vector3().crossVectors(rDir, perp).normalize();
+//       const delta180 = new THREE.Quaternion().setFromAxisAngle(axis, Math.PI);
+//       const desired  = delta180.multiply(restWorldQ);
+//       const parentWorldQ = new THREE.Quaternion();
+//       if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQ);
+//       bone.quaternion.copy(parentWorldQ.invert().multiply(desired));
+//       return;
+//     }
+//     const delta = new THREE.Quaternion().setFromUnitVectors(rDir, targetDir);
+//     const desiredWorldQ = delta.multiply(restWorldQ);
+//     const parentWorldQ  = new THREE.Quaternion();
+//     if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQ);
+//     bone.quaternion.slerp(parentWorldQ.invert().multiply(desiredWorldQ), alpha);
+//   }
+
+//   function driveFinger(lm: number[][], mcp: number, pip: number, dip: number, tip: number,
+//     b1: string, b2: string, b3: string) {
+//     rotateBoneToward(b1, mpDir(lm[mcp], lm[pip]));
+//     rotateBoneToward(b2, mpDir(lm[pip], lm[dip]));
+//     rotateBoneToward(b3, mpDir(lm[dip], lm[tip]));
+//   }
+
+//   function driveHand(hand: number[][], side: "l" | "r") {
+//     if (!hand || hand.length < 21) return;
+//     const s = side;
+//     rotateBoneToward(BONES[`${s}_hand`], mpDir(hand[0], hand[9]));
+//     driveFinger(hand,1,2,3,4,     BONES[`${s}_thumb1`],BONES[`${s}_thumb2`],BONES[`${s}_thumb3`]);
+//     driveFinger(hand,5,6,7,8,     BONES[`${s}_index1`],BONES[`${s}_index2`],BONES[`${s}_index3`]);
+//     driveFinger(hand,9,10,11,12,  BONES[`${s}_mid1`],  BONES[`${s}_mid2`],  BONES[`${s}_mid3`]);
+//     driveFinger(hand,13,14,15,16, BONES[`${s}_ring1`], BONES[`${s}_ring2`], BONES[`${s}_ring3`]);
+//     driveFinger(hand,17,18,19,20, BONES[`${s}_pinky1`],BONES[`${s}_pinky2`],BONES[`${s}_pinky3`]);
+//   }
+
+//   useFrame((_, delta) => {
+//     if (!isPlaying || !keypoints?.length) return;
+//     elapsed.current += Math.min(delta, 0.1);
+//     if (elapsed.current >= frameInterval) {
+//       elapsed.current = 0;
+//       if (frameIndex < keypoints.length - 1) onFrameAdvance();
+//     }
+//     const frame = keypoints[frameIndex];
+//     if (!frame) return;
+//     const pose  = frame.pose       as number[][] | undefined;
+//     const left  = frame.left_hand  as number[][] | undefined;
+//     const right = frame.right_hand as number[][] | undefined;
+//     if (pose && pose.length >= 17) {
+//       rotateBoneToward(BONES.r_upperarm, mpDir(pose[11], pose[13]));
+//       rotateBoneToward(BONES.r_forearm,  mpDir(pose[13], pose[15]));
+//       rotateBoneToward(BONES.l_upperarm, mpDir(pose[12], pose[14]));
+//       rotateBoneToward(BONES.l_forearm,  mpDir(pose[14], pose[16]));
+//     }
+//     if (left)  driveHand(left,  "r");
+//     if (right) driveHand(right, "l");
+//   });
+
+//   return (
+//     <group position={[0, -0.8, 0]}>
+//       <primitive object={scene} scale={1} />
+//     </group>
+//   );
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    SKELETON CONNECTIONS
+// ───────────────────────────────────────────────────────────── */
+// const POSE_CONNECTIONS: [number, number][] = [
+//   [11,12],[11,13],[13,15],[12,14],[14,16],
+//   [11,23],[12,24],[23,24],[23,25],[24,26],
+//   [25,27],[26,28],[27,29],[28,30],[29,31],[30,32],
+// ];
+// const HAND_CONNECTIONS: [number, number][] = [
+//   [0,1],[1,2],[2,3],[3,4],
+//   [0,5],[5,6],[6,7],[7,8],
+//   [0,9],[9,10],[10,11],[11,12],
+//   [0,13],[13,14],[14,15],[15,16],
+//   [0,17],[17,18],[18,19],[19,20],
+//   [5,9],[9,13],[13,17],
+// ];
+
+// /* ─────────────────────────────────────────────────────────────
+//    SKELETON VIEWER (2-D canvas)
+// ───────────────────────────────────────────────────────────── */
+// function SkeletonViewer({
+//   keypoints,
+//   fps,
+//   isPlaying,
+//   frameIndex,
+//   onFrameAdvance,
+// }: {
+//   keypoints: any[];
+//   fps: number;
+//   isPlaying: boolean;
+//   frameIndex: number;
+//   onFrameAdvance: () => void;
+// }) {
+//   const canvasRef    = useRef<HTMLCanvasElement>(null);
+//   const rafRef       = useRef<number>(0);
+//   const lastTimeRef  = useRef<number>(0);
+//   const frameInterval = 1000 / fps;
+
+//   // Keep a ref to the latest values so RAF closure stays fresh
+//   const isPlayingRef   = useRef(isPlaying);
+//   const frameIndexRef  = useRef(frameIndex);
+//   const totalRef       = useRef(keypoints.length);
+//   useEffect(() => { isPlayingRef.current  = isPlaying;       }, [isPlaying]);
+//   useEffect(() => { frameIndexRef.current = frameIndex;      }, [frameIndex]);
+//   useEffect(() => { totalRef.current      = keypoints.length;}, [keypoints.length]);
+
+//   // ── Zoom / pan state ───────────────────────────────────
+//   const zoomRef   = useRef(1);
+//   const offsetRef = useRef({ x: 0, y: 0 });
+//   const dragRef   = useRef<{ active: boolean; lastX: number; lastY: number; lastDist: number }>({
+//     active: false, lastX: 0, lastY: 0, lastDist: 0,
+//   });
+
+//   // ── draw one frame ──────────────────────────────────────
+//   const draw = useCallback((frameIdx: number) => {
+//     const canvas = canvasRef.current;
+//     if (!canvas) return;
+//     const ctx = canvas.getContext("2d");
+//     if (!ctx) return;
+
+//     const W = canvas.width;
+//     const H = canvas.height;
+
+//     ctx.fillStyle = "#080d1a";
+//     ctx.fillRect(0, 0, W, H);
+
+//     const z = zoomRef.current;
+//     const ox = offsetRef.current.x;
+//     const oy = offsetRef.current.y;
+//     ctx.save();
+//     ctx.setTransform(z, 0, 0, z, ox, oy);
+
+//     ctx.strokeStyle = "rgba(99,102,241,0.08)";
+//     ctx.lineWidth = 1 / z;
+//     for (let x = -W; x < W * 2; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H*2); ctx.stroke(); }
+//     for (let y = -H; y < H * 2; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W*2,y); ctx.stroke(); }
+
+//     const frame = keypoints[frameIdx];
+//     if (!frame) return;
+
+//     const pose  = frame.pose       as number[][] | undefined;
+//     const left  = frame.left_hand  as number[][] | undefined;
+//     const right = frame.right_hand as number[][] | undefined;
+
+//     // pose world coords: negate x to mirror for viewer, keep y natural (up = up)
+//     function poseXY(pt: number[]): [number, number] {
+//       return [(-pt[0] * 0.55 + 0.5) * W, (pt[1] * 0.55 + 0.38) * H];
+//     }
+//     // Hand landmarks are in world space (metres), wrist-relative after subtracting lm[0].
+//     // Use the SAME scale as poseXY (0.55 * canvas dimension) so the hand
+//     // sits flush against the pose wrist with no gap or overlap.
+//     function handXY(pt: number[], wristLm: number[], wx: number, wy: number): [number, number] {
+//       const rx = pt[0] - wristLm[0]; // relative to wrist landmark
+//       const ry = pt[1] - wristLm[1];
+//       return [wx + (-rx) * 0.55 * W, wy + ry * 0.55 * H];
+//     }
+
+//     // ── Face (landmarks 0–10) ──────────────────────────────
+//     if (pose && pose.length >= 11) {
+//       const nose   = pose[0]  ? poseXY(pose[0])  : null;
+//       const lEye   = pose[2]  ? poseXY(pose[2])  : null;
+//       const rEye   = pose[5]  ? poseXY(pose[5])  : null;
+//       const lEar   = pose[7]  ? poseXY(pose[7])  : null;
+//       const rEar   = pose[8]  ? poseXY(pose[8])  : null;
+//       const mouthL = pose[9]  ? poseXY(pose[9])  : null;
+//       const mouthR = pose[10] ? poseXY(pose[10]) : null;
+
+//       // Head circle from ear span
+//       if (lEar && rEar) {
+//         const hcx = (lEar[0] + rEar[0]) / 2;
+//         const hcy = (lEar[1] + rEar[1]) / 2;
+//         const hr  = Math.hypot(lEar[0] - rEar[0], lEar[1] - rEar[1]) * 0.65;
+//         ctx.beginPath(); ctx.arc(hcx, hcy, hr, 0, Math.PI * 2);
+//         ctx.strokeStyle = "rgba(167,139,250,0.45)"; ctx.lineWidth = 1.5; ctx.stroke();
+//       }
+
+//       // Nose → eye guide lines
+//       if (nose && lEye) {
+//         ctx.beginPath(); ctx.moveTo(nose[0], nose[1]); ctx.lineTo(lEye[0], lEye[1]);
+//         ctx.strokeStyle = "rgba(167,139,250,0.25)"; ctx.lineWidth = 1; ctx.stroke();
+//       }
+//       if (nose && rEye) {
+//         ctx.beginPath(); ctx.moveTo(nose[0], nose[1]); ctx.lineTo(rEye[0], rEye[1]);
+//         ctx.strokeStyle = "rgba(167,139,250,0.25)"; ctx.lineWidth = 1; ctx.stroke();
+//       }
+
+//       // Mouth
+//       if (mouthL && mouthR) {
+//         ctx.beginPath(); ctx.moveTo(mouthL[0], mouthL[1]); ctx.lineTo(mouthR[0], mouthR[1]);
+//         ctx.strokeStyle = "rgba(244,114,182,0.85)"; ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.stroke();
+//       }
+
+//       // Eyes
+//       for (const eye of [lEye, rEye]) {
+//         if (!eye) continue;
+//         ctx.beginPath(); ctx.arc(eye[0], eye[1], 3.5, 0, Math.PI * 2);
+//         ctx.fillStyle = "#a5b4fc"; ctx.shadowColor = "#818cf8"; ctx.shadowBlur = 8;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+
+//       // Ears
+//       for (const ear of [lEar, rEar]) {
+//         if (!ear) continue;
+//         ctx.beginPath(); ctx.arc(ear[0], ear[1], 3, 0, Math.PI * 2);
+//         ctx.fillStyle = "#818cf8"; ctx.fill();
+//       }
+
+//       // Nose
+//       if (nose) {
+//         ctx.beginPath(); ctx.arc(nose[0], nose[1], 3, 0, Math.PI * 2);
+//         ctx.fillStyle = "#c4b5fd"; ctx.shadowColor = "#a78bfa"; ctx.shadowBlur = 6;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+//     }
+
+//     // ── Body skeleton (landmarks 11+) ──────────────────────
+//     if (pose && pose.length >= 17) {
+//       ctx.lineCap = "round";
+//       for (const [a, b] of POSE_CONNECTIONS) {
+//         if (!pose[a] || !pose[b]) continue;
+//         const [ax, ay] = poseXY(pose[a]);
+//         const [bx, by] = poseXY(pose[b]);
+//         const grad = ctx.createLinearGradient(ax, ay, bx, by);
+//         grad.addColorStop(0, "rgba(99,102,241,0.9)");
+//         grad.addColorStop(1, "rgba(167,139,250,0.9)");
+//         ctx.strokeStyle = grad; ctx.lineWidth = 2.5;
+//         ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+//       }
+//       for (let i = 11; i <= 32; i++) {
+//         if (!pose[i]) continue;
+//         const [x, y] = poseXY(pose[i]);
+//         const isWrist = i === 15 || i === 16;
+//         ctx.beginPath(); ctx.arc(x, y, isWrist ? 5 : 4, 0, Math.PI * 2);
+//         ctx.fillStyle   = isWrist ? "#f472b6" : "#818cf8";
+//         ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+//     }
+
+//     const leftWrist  = pose?.[15] ? poseXY(pose[15]) : [W * 0.65, H * 0.62] as [number,number];
+//     const rightWrist = pose?.[16] ? poseXY(pose[16]) : [W * 0.35, H * 0.62] as [number,number];
+
+//     function drawHand(c: CanvasRenderingContext2D, lm: number[][], wx: number, wy: number, lineColor: string, dotColor: string) {
+//       if (!lm || lm.length < 21) return;
+//       c.lineCap = "round";
+//       c.lineJoin = "round";
+
+//       // Each finger as a chain of straight lines — exactly like the Python MediaPipe style
+//       // Chains: thumb=[0,1,2,3,4], index=[0,5,6,7,8], middle=[0,9,10,11,12],
+//       //         ring=[0,13,14,15,16], pinky=[0,17,18,19,20]
+//       // Palm cross-connections: 5-9, 9-13, 13-17
+//       const chains = [
+//         [0, 1, 2, 3, 4],       // thumb
+//         [0, 5, 6, 7, 8],       // index
+//         [0, 9, 10, 11, 12],    // middle
+//         [0, 13, 14, 15, 16],   // ring
+//         [0, 17, 18, 19, 20],   // pinky
+//       ];
+//       const palmLinks: [number, number][] = [[5,9],[9,13],[13,17]];
+
+//       // ── Bone lines ─────────────────────────────────────────
+//       c.strokeStyle = lineColor;
+//       // Slightly thicker near palm, thinner near fingertip
+//       chains.forEach((chain) => {
+//         for (let s = 0; s < chain.length - 1; s++) {
+//           const [ax, ay] = handXY(lm[chain[s]],   lm[0], wx, wy);
+//           const [bx, by] = handXY(lm[chain[s+1]], lm[0], wx, wy);
+//           // Thicker at palm (s=0), thinner near tip
+//           c.lineWidth = s === 0 ? 2.5 : s === 1 ? 2.0 : 1.6;
+//           c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+//         }
+//       });
+
+//       // Palm knuckle cross-bar
+//       c.lineWidth = 1.8;
+//       palmLinks.forEach(([a, b]) => {
+//         const [ax, ay] = handXY(lm[a], lm[0], wx, wy);
+//         const [bx, by] = handXY(lm[b], lm[0], wx, wy);
+//         c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+//       });
+
+//       // ── Joint dots ─────────────────────────────────────────
+//       for (let i = 0; i < 21; i++) {
+//         const [x, y] = handXY(lm[i], lm[0], wx, wy);
+//         // Tips (4,8,12,16,20) are white; knuckles are dotColor; wrist is larger
+//         const isTip   = [4, 8, 12, 16, 20].includes(i);
+//         const isWrist = i === 0;
+//         const r = isWrist ? 5 : isTip ? 3.5 : 2.5;
+//         c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2);
+//         c.fillStyle   = isTip ? "#ffffff" : dotColor;
+//         c.shadowColor = dotColor;
+//         c.shadowBlur  = isTip ? 10 : isWrist ? 14 : 5;
+//         c.fill();
+//         c.shadowBlur  = 0;
+//       }
+//     }
+
+//     if (left)  drawHand(ctx, left,  leftWrist[0],  leftWrist[1],  "rgba(251,191,36,0.75)",  "#fbbf24");
+//     if (right) drawHand(ctx, right, rightWrist[0], rightWrist[1], "rgba(52,211,153,0.75)",  "#34d399");
+
+//     ctx.restore(); // end zoom transform
+
+//     // ── HUD fixed to screen ────────────────────────────────
+//     ([["#818cf8","Pose"],["#fbbf24","Left Hand"],["#34d399","Right Hand"]] as [string,string][])
+//       .forEach(([color, label], i) => {
+//         ctx.beginPath(); ctx.arc(14, H - 14 - i * 18, 5, 0, Math.PI * 2);
+//         ctx.fillStyle = color; ctx.shadowBlur = 0; ctx.fill();
+//         ctx.fillStyle = "rgba(203,213,225,0.7)";
+//         ctx.font = "11px monospace"; ctx.fillText(label, 24, H - 10 - i * 18);
+//       });
+//     ctx.fillStyle = "rgba(129,140,248,0.45)";
+//     ctx.font = "10px monospace"; ctx.textAlign = "right";
+//     ctx.fillText(`${frameIdx + 1} / ${keypoints.length}`, W - 8, H - 8);
+//     if (Math.abs(zoomRef.current - 1) > 0.05)
+//       ctx.fillText(`${(zoomRef.current * 100).toFixed(0)}%`, W - 8, H - 20);
+//     ctx.textAlign = "left";
+//   }, [keypoints]);
+
+//   // Redraw whenever frameIndex changes
+//   useEffect(() => { draw(frameIndex); }, [frameIndex, draw]);
+
+//   // RAF loop for advancing frames
+//   useEffect(() => {
+//     cancelAnimationFrame(rafRef.current);
+//     lastTimeRef.current = 0;
+//     if (!isPlaying) return;
+
+//     const loop = (ts: number) => {
+//       if (!lastTimeRef.current) lastTimeRef.current = ts;
+//       if (ts - lastTimeRef.current >= frameInterval) {
+//         lastTimeRef.current = ts;
+//         if (frameIndexRef.current < totalRef.current - 1) {
+//           onFrameAdvance();
+//         }
+//       }
+//       rafRef.current = requestAnimationFrame(loop);
+//     };
+//     rafRef.current = requestAnimationFrame(loop);
+//     return () => cancelAnimationFrame(rafRef.current);
+//   }, [isPlaying, frameInterval, onFrameAdvance]);
+
+//   // ── Zoom / pan handlers ───────────────────────────────
+//   const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
+//     e.preventDefault();
+//     const canvas = canvasRef.current;
+//     if (!canvas) return;
+//     const rect = canvas.getBoundingClientRect();
+//     const sx = canvas.width / rect.width;
+//     const sy = canvas.height / rect.height;
+//     const mx = (e.clientX - rect.left) * sx;
+//     const my = (e.clientY - rect.top)  * sy;
+//     const factor = e.deltaY < 0 ? 1.1 : 0.9;
+//     const nz = Math.min(Math.max(zoomRef.current * factor, 0.3), 6);
+//     offsetRef.current = {
+//       x: mx - (mx - offsetRef.current.x) * (nz / zoomRef.current),
+//       y: my - (my - offsetRef.current.y) * (nz / zoomRef.current),
+//     };
+//     zoomRef.current = nz;
+//     draw(frameIndexRef.current);
+//   }, [draw]);
+
+//   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+//     dragRef.current = { active: true, lastX: e.clientX, lastY: e.clientY, lastDist: 0 };
+//   }, []);
+//   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+//     if (!dragRef.current.active) return;
+//     const canvas = canvasRef.current; if (!canvas) return;
+//     const rect = canvas.getBoundingClientRect();
+//     offsetRef.current = {
+//       x: offsetRef.current.x + (e.clientX - dragRef.current.lastX) * (canvas.width / rect.width),
+//       y: offsetRef.current.y + (e.clientY - dragRef.current.lastY) * (canvas.height / rect.height),
+//     };
+//     dragRef.current.lastX = e.clientX; dragRef.current.lastY = e.clientY;
+//     draw(frameIndexRef.current);
+//   }, [draw]);
+//   const stopDrag = useCallback(() => { dragRef.current.active = false; }, []);
+
+//   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+//     if (e.touches.length === 2) {
+//       dragRef.current.lastDist = Math.hypot(
+//         e.touches[0].clientX - e.touches[1].clientX,
+//         e.touches[0].clientY - e.touches[1].clientY
+//       );
+//     } else {
+//       dragRef.current = { active: true, lastX: e.touches[0].clientX, lastY: e.touches[0].clientY, lastDist: 0 };
+//     }
+//   }, []);
+//   const handleTouchMove = useCallback((e: React.TouchEvent) => {
+//     e.preventDefault();
+//     const canvas = canvasRef.current; if (!canvas) return;
+//     const rect = canvas.getBoundingClientRect();
+//     const sx = canvas.width / rect.width; const sy = canvas.height / rect.height;
+//     if (e.touches.length === 2) {
+//       const dist = Math.hypot(
+//         e.touches[0].clientX - e.touches[1].clientX,
+//         e.touches[0].clientY - e.touches[1].clientY
+//       );
+//       if (dragRef.current.lastDist > 0) {
+//         const factor = dist / dragRef.current.lastDist;
+//         const cx = ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left) * sx;
+//         const cy = ((e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top)  * sy;
+//         const nz = Math.min(Math.max(zoomRef.current * factor, 0.3), 6);
+//         offsetRef.current = {
+//           x: cx - (cx - offsetRef.current.x) * (nz / zoomRef.current),
+//           y: cy - (cy - offsetRef.current.y) * (nz / zoomRef.current),
+//         };
+//         zoomRef.current = nz;
+//       }
+//       dragRef.current.lastDist = dist;
+//     } else if (dragRef.current.active) {
+//       offsetRef.current = {
+//         x: offsetRef.current.x + (e.touches[0].clientX - dragRef.current.lastX) * sx,
+//         y: offsetRef.current.y + (e.touches[0].clientY - dragRef.current.lastY) * sy,
+//       };
+//       dragRef.current.lastX = e.touches[0].clientX; dragRef.current.lastY = e.touches[0].clientY;
+//     }
+//     draw(frameIndexRef.current);
+//   }, [draw]);
+
+//   const handleDoubleClick = useCallback(() => {
+//     zoomRef.current = 1; offsetRef.current = { x: 0, y: 0 };
+//     draw(frameIndexRef.current);
+//   }, [draw]);
+
+//   return (
+//     <canvas
+//       ref={canvasRef}
+//       width={520}
+//       height={400}
+//       style={{ width: "100%", height: "100%", display: "block", cursor: dragRef.current.active ? "grabbing" : "grab" }}
+//       onWheel={handleWheel}
+//       onMouseDown={handleMouseDown}
+//       onMouseMove={handleMouseMove}
+//       onMouseUp={stopDrag}
+//       onMouseLeave={stopDrag}
+//       onTouchStart={handleTouchStart}
+//       onTouchMove={handleTouchMove}
+//       onTouchEnd={stopDrag}
+//       onDoubleClick={handleDoubleClick}
+//     />
+//   );
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    PLAYBACK CONTROLS
+// ───────────────────────────────────────────────────────────── */
+// function PlaybackControls({
+//   isPlaying, onPlay, onPause, onReplay, frameIndex, total,
+// }: {
+//   isPlaying: boolean;
+//   onPlay: () => void;
+//   onPause: () => void;
+//   onReplay: () => void;
+//   frameIndex: number;
+//   total: number;
+// }) {
+//   const pct = total > 1 ? (frameIndex / (total - 1)) * 100 : 0;
+//   const base: React.CSSProperties = {
+//     display: "flex", alignItems: "center", justifyContent: "center",
+//     border: "none", cursor: "pointer", transition: "all 0.15s",
+//   };
+//   return (
+//     <div style={{
+//       display: "flex", flexDirection: "column", gap: "8px",
+//       padding: "10px 16px 12px", flexShrink: 0,
+//       background: "rgba(8,13,26,0.92)",
+//       borderTop: "1px solid rgba(99,102,241,0.18)",
+//     }}>
+//       {/* Progress bar */}
+//       <div style={{ height: "4px", borderRadius: "4px", background: "rgba(99,102,241,0.15)", overflow: "hidden" }}>
+//         <div style={{
+//           height: "100%", width: `${pct}%`,
+//           background: "linear-gradient(90deg, #6366f1, #a78bfa)",
+//           borderRadius: "4px", transition: "width 0.08s linear",
+//         }} />
+//       </div>
+//       {/* Buttons */}
+//       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "14px" }}>
+//         <button onClick={onReplay} title="Replay" style={{
+//           ...base, width: 36, height: 36, borderRadius: "50%",
+//           background: "rgba(99,102,241,0.12)",
+//           border: "1px solid rgba(99,102,241,0.35)",
+//           color: "#a78bfa", fontSize: "18px",
+//         }}
+//           onMouseEnter={e => (e.currentTarget.style.background = "rgba(99,102,241,0.28)")}
+//           onMouseLeave={e => (e.currentTarget.style.background = "rgba(99,102,241,0.12)")}
+//         >↺</button>
+
+//         {isPlaying ? (
+//           <button onClick={onPause} title="Pause" style={{
+//             ...base, width: 46, height: 46, borderRadius: "50%",
+//             background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+//             color: "#fff", fontSize: "20px",
+//             boxShadow: "0 0 20px rgba(99,102,241,0.5)",
+//           }}
+//             onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+//             onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+//           >⏸</button>
+//         ) : (
+//           <button onClick={onPlay} title="Play" style={{
+//             ...base, width: 46, height: 46, borderRadius: "50%",
+//             background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+//             color: "#fff", fontSize: "20px",
+//             boxShadow: "0 0 20px rgba(99,102,241,0.5)",
+//           }}
+//             onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+//             onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+//           >▶</button>
+//         )}
+
+//         <span style={{
+//           fontSize: "11px", fontFamily: "monospace",
+//           color: "rgba(129,140,248,0.5)", minWidth: "70px", textAlign: "center",
+//         }}>
+//           {total > 0 ? `${frameIndex + 1} / ${total}` : "no data"}
+//         </span>
+//       </div>
+//     </div>
+//   );
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    ROOT EXPORT
+// ───────────────────────────────────────────────────────────── */
+// export default function AvatarViewer({ keypoints, fps = 25 }: Props) {
+//   const [activeTab,  setActiveTab]  = useState<"avatar" | "skeleton">("avatar");
+//   const [isPlaying,  setIsPlaying]  = useState(false);
+//   const [frameIndex, setFrameIndex] = useState(0);
+
+//   const advanceFrame = useCallback(() => {
+//     setFrameIndex(prev => {
+//       const next = prev + 1;
+//       if (next >= keypoints.length - 1) setIsPlaying(false);
+//       return Math.min(next, keypoints.length - 1);
+//     });
+//   }, [keypoints.length]);
+
+//   useEffect(() => { setFrameIndex(0); setIsPlaying(false); }, [keypoints]);
+
+//   const tab = (active: boolean): React.CSSProperties => ({
+//     flex: 1, padding: "9px 0", border: "none", cursor: "pointer",
+//     background: active ? "rgba(99,102,241,0.2)" : "transparent",
+//     borderBottom: `2px solid ${active ? "#818cf8" : "transparent"}`,
+//     color: active ? "#c7d2fe" : "rgba(148,163,184,0.5)",
+//     fontWeight: active ? 600 : 400, fontSize: "13px",
+//     letterSpacing: "0.04em", transition: "all 0.18s",
+//   });
+
+//   return (
+//     <div style={{
+//       display: "flex", flexDirection: "column",
+//       height: "100%", width: "100%",
+//       background: "#080d1a",
+//     }}>
+//       {/* TAB BAR */}
+//       <div style={{
+//         display: "flex", flexShrink: 0,
+//         background: "rgba(8,13,26,0.98)",
+//         borderBottom: "1px solid rgba(99,102,241,0.18)",
+//       }}>
+//         <button style={tab(activeTab === "avatar")}   onClick={() => setActiveTab("avatar")}>
+//           🧍 Avatar
+//         </button>
+//         <button style={tab(activeTab === "skeleton")} onClick={() => setActiveTab("skeleton")}>
+//           🦴 Skeleton
+//         </button>
+//       </div>
+
+//       {/* VIEWER */}
+//       <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
+
+//         {/* Avatar */}
+//         <div style={{ position: "absolute", inset: 0, display: activeTab === "avatar" ? "block" : "none" }}>
+//           <Canvas camera={{ position: [0, 1, 3], fov: 50 }}>
+//             <ambientLight intensity={0.6} />
+//             <directionalLight position={[2, 4, 3]} intensity={1.4} />
+//             <AnimatedAvatar
+//               keypoints={keypoints} fps={fps}
+//               isPlaying={isPlaying} frameIndex={frameIndex}
+//               onFrameAdvance={advanceFrame}
+//             />
+//           </Canvas>
+//         </div>
+
+//         {/* Skeleton */}
+//         <div style={{
+//           position: "absolute", inset: 0,
+//           display: activeTab === "skeleton" ? "flex" : "none",
+//           alignItems: "center", justifyContent: "center",
+//         }}>
+//           {keypoints.length > 0 ? (
+//             <SkeletonViewer
+//               keypoints={keypoints} fps={fps}
+//               isPlaying={isPlaying} frameIndex={frameIndex}
+//               onFrameAdvance={advanceFrame}
+//             />
+//           ) : (
+//             <div style={{ textAlign: "center", color: "rgba(148,163,184,0.4)" }}>
+//               <div style={{ fontSize: "36px", marginBottom: "8px" }}>🦴</div>
+//               <div style={{ fontSize: "13px" }}>No keypoints loaded yet</div>
+//             </div>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* CONTROLS */}
+//       <PlaybackControls
+//         isPlaying={isPlaying}
+//         onPlay={() => setIsPlaying(true)}
+//         onPause={() => setIsPlaying(false)}
+//         onReplay={() => { setFrameIndex(0); setIsPlaying(true); }}
+//         frameIndex={frameIndex}
+//         total={keypoints.length}
+//       />
+//     </div>
+//   );
+// }
+// import { Canvas, useFrame } from "@react-three/fiber";
+// import { useGLTF } from "@react-three/drei";
+// import { useEffect, useRef, useState, useCallback } from "react";
+// import * as THREE from "three";
+
+// interface Props {
+//   keypoints: any[];
+//   fps?: number;
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    MIXAMO BONE MAP
+// ───────────────────────────────────────────────────────────── */
+// const BONES = {
+//   l_upperarm: "LeftArm",
+//   l_forearm:  "LeftForeArm",
+//   l_hand:     "LeftHand",
+//   r_upperarm: "RightArm",
+//   r_forearm:  "RightForeArm",
+//   r_hand:     "RightHand",
+//   l_thumb1: "LeftHandThumb1",  l_thumb2: "LeftHandThumb2",  l_thumb3: "LeftHandThumb3",
+//   l_index1: "LeftHandIndex1",  l_index2: "LeftHandIndex2",  l_index3: "LeftHandIndex3",
+//   l_mid1:   "LeftHandMiddle1", l_mid2:   "LeftHandMiddle2", l_mid3:   "LeftHandMiddle3",
+//   l_ring1:  "LeftHandRing1",   l_ring2:  "LeftHandRing2",   l_ring3:  "LeftHandRing3",
+//   l_pinky1: "LeftHandPinky1",  l_pinky2: "LeftHandPinky2",  l_pinky3: "LeftHandPinky3",
+//   r_thumb1: "RightHandThumb1", r_thumb2: "RightHandThumb2", r_thumb3: "RightHandThumb3",
+//   r_index1: "RightHandIndex1", r_index2: "RightHandIndex2", r_index3: "RightHandIndex3",
+//   r_mid1:   "RightHandMiddle1",r_mid2:   "RightHandMiddle2",r_mid3:   "RightHandMiddle3",
+//   r_ring1:  "RightHandRing1",  r_ring2:  "RightHandRing2",  r_ring3:  "RightHandRing3",
+//   r_pinky1: "RightHandPinky1", r_pinky2: "RightHandPinky2", r_pinky3: "RightHandPinky3",
+// } as const;
+
+// /* ─────────────────────────────────────────────────────────────
+//    MEDIAPIPE HELPERS
+// ───────────────────────────────────────────────────────────── */
+// function mpToWorld(p: number[]): THREE.Vector3 {
+//   return new THREE.Vector3(-p[0], -p[1], p[2]);
+// }
+// function mpDir(a: number[], b: number[]): THREE.Vector3 {
+//   return mpToWorld(b).sub(mpToWorld(a)).normalize();
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    ANIMATED AVATAR (3-D)
+// ───────────────────────────────────────────────────────────── */
+// function AnimatedAvatar({
+//   keypoints,
+//   fps = 25,
+//   isPlaying,
+//   frameIndex,
+//   onFrameAdvance,
+// }: Props & {
+//   isPlaying: boolean;
+//   frameIndex: number;
+//   onFrameAdvance: () => void;
+// }) {
+//   const { scene } = useGLTF("/avatar.glb");
+//   const bonesRef   = useRef<Record<string, THREE.Bone>>({});
+//   const restDir    = useRef<Record<string, THREE.Vector3>>({});
+//   const restLocalQ = useRef<Record<string, THREE.Quaternion>>({});
+//   const elapsed    = useRef(0);
+//   const frameInterval = 1 / fps;
+
+//   useEffect(() => {
+//     scene.traverse((obj) => {
+//       if (!(obj as THREE.Bone).isBone) return;
+//       const bone = obj as THREE.Bone;
+//       bonesRef.current[bone.name]   = bone;
+//       restLocalQ.current[bone.name] = bone.quaternion.clone();
+//     });
+//     scene.traverse((obj) => {
+//       if (!(obj as THREE.Bone).isBone) return;
+//       const bone = obj as THREE.Bone;
+//       const childBone = bone.children.find(c => (c as THREE.Bone).isBone) as THREE.Object3D | undefined;
+//       if (childBone) {
+//         const bPos = new THREE.Vector3();
+//         const cPos = new THREE.Vector3();
+//         bone.getWorldPosition(bPos);
+//         childBone.getWorldPosition(cPos);
+//         restDir.current[bone.name] = cPos.sub(bPos).normalize();
+//       }
+//     });
+//   }, [scene]);
+
+//   useEffect(() => { elapsed.current = 0; }, [keypoints]);
+
+//   function rotateBoneToward(boneName: string, targetDir: THREE.Vector3, alpha = 1.0) {
+//     const bone  = bonesRef.current[boneName];
+//     const rDir  = restDir.current[boneName];
+//     const restQ = restLocalQ.current[boneName];
+//     if (!bone || !rDir || !restQ || targetDir.lengthSq() < 0.001) return;
+//     bone.quaternion.copy(restQ);
+//     const restWorldQ = new THREE.Quaternion();
+//     bone.getWorldQuaternion(restWorldQ);
+//     const dot = rDir.dot(targetDir);
+//     if (dot < -0.9999) {
+//       const perp = Math.abs(rDir.x) < 0.9 ? new THREE.Vector3(1,0,0) : new THREE.Vector3(0,1,0);
+//       const axis = new THREE.Vector3().crossVectors(rDir, perp).normalize();
+//       const delta180 = new THREE.Quaternion().setFromAxisAngle(axis, Math.PI);
+//       const desired  = delta180.multiply(restWorldQ);
+//       const parentWorldQ = new THREE.Quaternion();
+//       if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQ);
+//       bone.quaternion.copy(parentWorldQ.invert().multiply(desired));
+//       return;
+//     }
+//     const delta = new THREE.Quaternion().setFromUnitVectors(rDir, targetDir);
+//     const desiredWorldQ = delta.multiply(restWorldQ);
+//     const parentWorldQ  = new THREE.Quaternion();
+//     if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQ);
+//     bone.quaternion.slerp(parentWorldQ.invert().multiply(desiredWorldQ), alpha);
+//   }
+
+//   function driveFinger(lm: number[][], mcp: number, pip: number, dip: number, tip: number,
+//     b1: string, b2: string, b3: string) {
+//     rotateBoneToward(b1, mpDir(lm[mcp], lm[pip]));
+//     rotateBoneToward(b2, mpDir(lm[pip], lm[dip]));
+//     rotateBoneToward(b3, mpDir(lm[dip], lm[tip]));
+//   }
+
+//   function driveHand(hand: number[][], side: "l" | "r") {
+//     if (!hand || hand.length < 21) return;
+//     const s = side;
+//     rotateBoneToward(BONES[`${s}_hand`], mpDir(hand[0], hand[9]));
+//     driveFinger(hand,1,2,3,4,     BONES[`${s}_thumb1`],BONES[`${s}_thumb2`],BONES[`${s}_thumb3`]);
+//     driveFinger(hand,5,6,7,8,     BONES[`${s}_index1`],BONES[`${s}_index2`],BONES[`${s}_index3`]);
+//     driveFinger(hand,9,10,11,12,  BONES[`${s}_mid1`],  BONES[`${s}_mid2`],  BONES[`${s}_mid3`]);
+//     driveFinger(hand,13,14,15,16, BONES[`${s}_ring1`], BONES[`${s}_ring2`], BONES[`${s}_ring3`]);
+//     driveFinger(hand,17,18,19,20, BONES[`${s}_pinky1`],BONES[`${s}_pinky2`],BONES[`${s}_pinky3`]);
+//   }
+
+//   useFrame((_, delta) => {
+//     if (!isPlaying || !keypoints?.length) return;
+//     elapsed.current += Math.min(delta, 0.1);
+//     if (elapsed.current >= frameInterval) {
+//       elapsed.current = 0;
+//       if (frameIndex < keypoints.length - 1) onFrameAdvance();
+//     }
+//     const frame = keypoints[frameIndex];
+//     if (!frame) return;
+//     const pose  = frame.pose       as number[][] | undefined;
+//     const left  = frame.left_hand  as number[][] | undefined;
+//     const right = frame.right_hand as number[][] | undefined;
+//     if (pose && pose.length >= 17) {
+//       rotateBoneToward(BONES.r_upperarm, mpDir(pose[11], pose[13]));
+//       rotateBoneToward(BONES.r_forearm,  mpDir(pose[13], pose[15]));
+//       rotateBoneToward(BONES.l_upperarm, mpDir(pose[12], pose[14]));
+//       rotateBoneToward(BONES.l_forearm,  mpDir(pose[14], pose[16]));
+//     }
+//     if (left)  driveHand(left,  "r");
+//     if (right) driveHand(right, "l");
+//   });
+
+//   return (
+//     <group position={[0, -0.8, 0]}>
+//       <primitive object={scene} scale={1} />
+//     </group>
+//   );
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    SKELETON CONNECTIONS
+// ───────────────────────────────────────────────────────────── */
+// const POSE_CONNECTIONS: [number, number][] = [
+//   [11,12],[11,13],[13,15],[12,14],[14,16],
+//   [11,23],[12,24],[23,24],[23,25],[24,26],
+//   [25,27],[26,28],[27,29],[28,30],[29,31],[30,32],
+// ];
+// const HAND_CONNECTIONS: [number, number][] = [
+//   [0,1],[1,2],[2,3],[3,4],
+//   [0,5],[5,6],[6,7],[7,8],
+//   [0,9],[9,10],[10,11],[11,12],
+//   [0,13],[13,14],[14,15],[15,16],
+//   [0,17],[17,18],[18,19],[19,20],
+//   [5,9],[9,13],[13,17],
+// ];
+
+// /* ─────────────────────────────────────────────────────────────
+//    SKELETON VIEWER (2-D canvas)
+// ───────────────────────────────────────────────────────────── */
+// function SkeletonViewer({
+//   keypoints,
+//   fps,
+//   isPlaying,
+//   frameIndex,
+//   onFrameAdvance,
+// }: {
+//   keypoints: any[];
+//   fps: number;
+//   isPlaying: boolean;
+//   frameIndex: number;
+//   onFrameAdvance: () => void;
+// }) {
+//   const canvasRef    = useRef<HTMLCanvasElement>(null);
+//   const rafRef       = useRef<number>(0);
+//   const lastTimeRef  = useRef<number>(0);
+//   const frameInterval = 1000 / fps;
+
+//   // Keep a ref to the latest values so RAF closure stays fresh
+//   const isPlayingRef   = useRef(isPlaying);
+//   const frameIndexRef  = useRef(frameIndex);
+//   const totalRef       = useRef(keypoints.length);
+//   useEffect(() => { isPlayingRef.current  = isPlaying;       }, [isPlaying]);
+//   useEffect(() => { frameIndexRef.current = frameIndex;      }, [frameIndex]);
+//   useEffect(() => { totalRef.current      = keypoints.length;}, [keypoints.length]);
+
+//   // ── Zoom / pan state ───────────────────────────────────
+//   const zoomRef   = useRef(1);
+//   const offsetRef = useRef({ x: 0, y: 0 });
+//   const dragRef   = useRef<{ active: boolean; lastX: number; lastY: number; lastDist: number }>({
+//     active: false, lastX: 0, lastY: 0, lastDist: 0,
+//   });
+
+//   // ── draw one frame ──────────────────────────────────────
+//   const draw = useCallback((frameIdx: number) => {
+//     const canvas = canvasRef.current;
+//     if (!canvas) return;
+//     const ctx = canvas.getContext("2d");
+//     if (!ctx) return;
+
+//     const W = canvas.width;
+//     const H = canvas.height;
+
+//     ctx.fillStyle = "#080d1a";
+//     ctx.fillRect(0, 0, W, H);
+
+//     const z = zoomRef.current;
+//     const ox = offsetRef.current.x;
+//     const oy = offsetRef.current.y;
+//     ctx.save();
+//     ctx.setTransform(z, 0, 0, z, ox, oy);
+
+//     ctx.strokeStyle = "rgba(99,102,241,0.08)";
+//     ctx.lineWidth = 1 / z;
+//     for (let x = -W; x < W * 2; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H*2); ctx.stroke(); }
+//     for (let y = -H; y < H * 2; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W*2,y); ctx.stroke(); }
+
+//     const frame = keypoints[frameIdx];
+//     if (!frame) return;
+
+//     const pose  = frame.pose       as number[][] | undefined;
+//     const left  = frame.left_hand  as number[][] | undefined;
+//     const right = frame.right_hand as number[][] | undefined;
+
+//     // pose world coords: negate x to mirror for viewer, keep y natural (up = up)
+//     function poseXY(pt: number[]): [number, number] {
+//       return [(-pt[0] * 0.55 + 0.5) * W, (pt[1] * 0.55 + 0.38) * H];
+//     }
+//     // Hand landmarks are in world space (metres), wrist-relative after subtracting lm[0].
+//     // Use the SAME scale as poseXY (0.55 * canvas dimension) so the hand
+//     // sits flush against the pose wrist with no gap or overlap.
+//     // Detect coord space: world landmarks are small (~0.0–0.3), image landmarks are large (0–1)
+//     // Image-space landmarks have x already in screen direction; world-space need negation to mirror.
+//     function handXY(pt: number[], wristLm: number[], wx: number, wy: number, flipX = false): [number, number] {
+//       const rx = pt[0] - wristLm[0];
+//       const ry = pt[1] - wristLm[1];
+//       return [wx + (flipX ? -rx : rx) * 0.55 * W, wy + ry * 0.55 * H];
+//     }
+
+//     // ── Face (landmarks 0–10) ──────────────────────────────
+//     if (pose && pose.length >= 11) {
+//       const nose   = pose[0]  ? poseXY(pose[0])  : null;
+//       const lEye   = pose[2]  ? poseXY(pose[2])  : null;
+//       const rEye   = pose[5]  ? poseXY(pose[5])  : null;
+//       const lEar   = pose[7]  ? poseXY(pose[7])  : null;
+//       const rEar   = pose[8]  ? poseXY(pose[8])  : null;
+//       const mouthL = pose[9]  ? poseXY(pose[9])  : null;
+//       const mouthR = pose[10] ? poseXY(pose[10]) : null;
+
+//       // Head circle from ear span
+//       if (lEar && rEar) {
+//         const hcx = (lEar[0] + rEar[0]) / 2;
+//         const hcy = (lEar[1] + rEar[1]) / 2;
+//         const hr  = Math.hypot(lEar[0] - rEar[0], lEar[1] - rEar[1]) * 0.65;
+//         ctx.beginPath(); ctx.arc(hcx, hcy, hr, 0, Math.PI * 2);
+//         ctx.strokeStyle = "rgba(167,139,250,0.45)"; ctx.lineWidth = 1.5; ctx.stroke();
+//       }
+
+//       // Nose → eye guide lines
+//       if (nose && lEye) {
+//         ctx.beginPath(); ctx.moveTo(nose[0], nose[1]); ctx.lineTo(lEye[0], lEye[1]);
+//         ctx.strokeStyle = "rgba(167,139,250,0.25)"; ctx.lineWidth = 1; ctx.stroke();
+//       }
+//       if (nose && rEye) {
+//         ctx.beginPath(); ctx.moveTo(nose[0], nose[1]); ctx.lineTo(rEye[0], rEye[1]);
+//         ctx.strokeStyle = "rgba(167,139,250,0.25)"; ctx.lineWidth = 1; ctx.stroke();
+//       }
+
+//       // Mouth
+//       if (mouthL && mouthR) {
+//         ctx.beginPath(); ctx.moveTo(mouthL[0], mouthL[1]); ctx.lineTo(mouthR[0], mouthR[1]);
+//         ctx.strokeStyle = "rgba(244,114,182,0.85)"; ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.stroke();
+//       }
+
+//       // Eyes
+//       for (const eye of [lEye, rEye]) {
+//         if (!eye) continue;
+//         ctx.beginPath(); ctx.arc(eye[0], eye[1], 3.5, 0, Math.PI * 2);
+//         ctx.fillStyle = "#a5b4fc"; ctx.shadowColor = "#818cf8"; ctx.shadowBlur = 8;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+
+//       // Ears
+//       for (const ear of [lEar, rEar]) {
+//         if (!ear) continue;
+//         ctx.beginPath(); ctx.arc(ear[0], ear[1], 3, 0, Math.PI * 2);
+//         ctx.fillStyle = "#818cf8"; ctx.fill();
+//       }
+
+//       // Nose
+//       if (nose) {
+//         ctx.beginPath(); ctx.arc(nose[0], nose[1], 3, 0, Math.PI * 2);
+//         ctx.fillStyle = "#c4b5fd"; ctx.shadowColor = "#a78bfa"; ctx.shadowBlur = 6;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+//     }
+
+//     // ── Body skeleton (landmarks 11+) ──────────────────────
+//     if (pose && pose.length >= 17) {
+//       ctx.lineCap = "round";
+//       for (const [a, b] of POSE_CONNECTIONS) {
+//         if (!pose[a] || !pose[b]) continue;
+//         const [ax, ay] = poseXY(pose[a]);
+//         const [bx, by] = poseXY(pose[b]);
+//         const grad = ctx.createLinearGradient(ax, ay, bx, by);
+//         grad.addColorStop(0, "rgba(99,102,241,0.9)");
+//         grad.addColorStop(1, "rgba(167,139,250,0.9)");
+//         ctx.strokeStyle = grad; ctx.lineWidth = 2.5;
+//         ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+//       }
+//       for (let i = 11; i <= 32; i++) {
+//         if (!pose[i]) continue;
+//         const [x, y] = poseXY(pose[i]);
+//         const isWrist = i === 15 || i === 16;
+//         ctx.beginPath(); ctx.arc(x, y, isWrist ? 5 : 4, 0, Math.PI * 2);
+//         ctx.fillStyle   = isWrist ? "#f472b6" : "#818cf8";
+//         ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
+//         ctx.fill(); ctx.shadowBlur = 0;
+//       }
+//     }
+
+//     const leftWrist  = pose?.[15] ? poseXY(pose[15]) : [W * 0.65, H * 0.62] as [number,number];
+//     const rightWrist = pose?.[16] ? poseXY(pose[16]) : [W * 0.35, H * 0.62] as [number,number];
+
+//     function drawHand(c: CanvasRenderingContext2D, lm: number[][], wx: number, wy: number, lineColor: string, dotColor: string) {
+//       if (!lm || lm.length < 21) return;
+//       c.lineCap = "round";
+//       c.lineJoin = "round";
+//       // Detect coordinate space:
+//       // - World-space (word animations): all x values are small metres, typically -0.3 to 0.3
+//       // - Image-space (fingerspelling): x values are normalised 0–1, so at least some will be > 0.4
+//       // We check the wrist (lm[0]) and middle-finger MCP (lm[9]) absolute values.
+//       const isImageSpace = lm.some(pt => Math.abs(pt[0]) > 0.4 || Math.abs(pt[1]) > 0.4);
+//       // World-space needs x-flip to match mirrored body; image-space already faces correct way.
+//       const flipX = !isImageSpace;
+
+//       // Each finger as a chain of straight lines — exactly like the Python MediaPipe style
+//       // Chains: thumb=[0,1,2,3,4], index=[0,5,6,7,8], middle=[0,9,10,11,12],
+//       //         ring=[0,13,14,15,16], pinky=[0,17,18,19,20]
+//       // Palm cross-connections: 5-9, 9-13, 13-17
+//       const chains = [
+//         [0, 1, 2, 3, 4],       // thumb
+//         [0, 5, 6, 7, 8],       // index
+//         [0, 9, 10, 11, 12],    // middle
+//         [0, 13, 14, 15, 16],   // ring
+//         [0, 17, 18, 19, 20],   // pinky
+//       ];
+//       const palmLinks: [number, number][] = [[5,9],[9,13],[13,17]];
+
+//       // ── Bone lines ─────────────────────────────────────────
+//       c.strokeStyle = lineColor;
+//       // Slightly thicker near palm, thinner near fingertip
+//       chains.forEach((chain) => {
+//         for (let s = 0; s < chain.length - 1; s++) {
+//           const [ax, ay] = handXY(lm[chain[s]],   lm[0], wx, wy, flipX);
+//           const [bx, by] = handXY(lm[chain[s+1]], lm[0], wx, wy, flipX);
+//           // Thicker at palm (s=0), thinner near tip
+//           c.lineWidth = s === 0 ? 2.5 : s === 1 ? 2.0 : 1.6;
+//           c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+//         }
+//       });
+
+//       // Palm knuckle cross-bar
+//       c.lineWidth = 1.8;
+//       palmLinks.forEach(([a, b]) => {
+//         const [ax, ay] = handXY(lm[a], lm[0], wx, wy, flipX);
+//         const [bx, by] = handXY(lm[b], lm[0], wx, wy, flipX);
+//         c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+//       });
+
+//       // ── Joint dots ─────────────────────────────────────────
+//       for (let i = 0; i < 21; i++) {
+//         const [x, y] = handXY(lm[i], lm[0], wx, wy, flipX);
+//         // Tips (4,8,12,16,20) are white; knuckles are dotColor; wrist is larger
+//         const isTip   = [4, 8, 12, 16, 20].includes(i);
+//         const isWrist = i === 0;
+//         const r = isWrist ? 5 : isTip ? 3.5 : 2.5;
+//         c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2);
+//         c.fillStyle   = isTip ? "#ffffff" : dotColor;
+//         c.shadowColor = dotColor;
+//         c.shadowBlur  = isTip ? 10 : isWrist ? 14 : 5;
+//         c.fill();
+//         c.shadowBlur  = 0;
+//       }
+//     }
+
+//     if (left)  drawHand(ctx, left,  rightWrist[0], rightWrist[1], "rgba(251,191,36,0.75)",  "#fbbf24");
+//     if (right) drawHand(ctx, right, leftWrist[0],  leftWrist[1],  "rgba(52,211,153,0.75)",  "#34d399");
+
+//     ctx.restore(); // end zoom transform
+
+//     // ── HUD fixed to screen ────────────────────────────────
+//     ([["#818cf8","Pose"],["#fbbf24","Left Hand"],["#34d399","Right Hand"]] as [string,string][])
+//       .forEach(([color, label], i) => {
+//         ctx.beginPath(); ctx.arc(14, H - 14 - i * 18, 5, 0, Math.PI * 2);
+//         ctx.fillStyle = color; ctx.shadowBlur = 0; ctx.fill();
+//         ctx.fillStyle = "rgba(203,213,225,0.7)";
+//         ctx.font = "11px monospace"; ctx.fillText(label, 24, H - 10 - i * 18);
+//       });
+//     ctx.fillStyle = "rgba(129,140,248,0.45)";
+//     ctx.font = "10px monospace"; ctx.textAlign = "right";
+//     ctx.fillText(`${frameIdx + 1} / ${keypoints.length}`, W - 8, H - 8);
+//     if (Math.abs(zoomRef.current - 1) > 0.05)
+//       ctx.fillText(`${(zoomRef.current * 100).toFixed(0)}%`, W - 8, H - 20);
+//     ctx.textAlign = "left";
+//   }, [keypoints]);
+
+//   // Redraw whenever frameIndex changes
+//   useEffect(() => { draw(frameIndex); }, [frameIndex, draw]);
+
+//   // RAF loop for advancing frames
+//   useEffect(() => {
+//     cancelAnimationFrame(rafRef.current);
+//     lastTimeRef.current = 0;
+//     if (!isPlaying) return;
+
+//     const loop = (ts: number) => {
+//       if (!lastTimeRef.current) lastTimeRef.current = ts;
+//       if (ts - lastTimeRef.current >= frameInterval) {
+//         lastTimeRef.current = ts;
+//         if (frameIndexRef.current < totalRef.current - 1) {
+//           onFrameAdvance();
+//         }
+//       }
+//       rafRef.current = requestAnimationFrame(loop);
+//     };
+//     rafRef.current = requestAnimationFrame(loop);
+//     return () => cancelAnimationFrame(rafRef.current);
+//   }, [isPlaying, frameInterval, onFrameAdvance]);
+
+//   // ── Zoom / pan handlers ───────────────────────────────
+//   const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
+//     e.preventDefault();
+//     const canvas = canvasRef.current;
+//     if (!canvas) return;
+//     const rect = canvas.getBoundingClientRect();
+//     const sx = canvas.width / rect.width;
+//     const sy = canvas.height / rect.height;
+//     const mx = (e.clientX - rect.left) * sx;
+//     const my = (e.clientY - rect.top)  * sy;
+//     const factor = e.deltaY < 0 ? 1.1 : 0.9;
+//     const nz = Math.min(Math.max(zoomRef.current * factor, 0.3), 6);
+//     offsetRef.current = {
+//       x: mx - (mx - offsetRef.current.x) * (nz / zoomRef.current),
+//       y: my - (my - offsetRef.current.y) * (nz / zoomRef.current),
+//     };
+//     zoomRef.current = nz;
+//     draw(frameIndexRef.current);
+//   }, [draw]);
+
+//   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+//     dragRef.current = { active: true, lastX: e.clientX, lastY: e.clientY, lastDist: 0 };
+//   }, []);
+//   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+//     if (!dragRef.current.active) return;
+//     const canvas = canvasRef.current; if (!canvas) return;
+//     const rect = canvas.getBoundingClientRect();
+//     offsetRef.current = {
+//       x: offsetRef.current.x + (e.clientX - dragRef.current.lastX) * (canvas.width / rect.width),
+//       y: offsetRef.current.y + (e.clientY - dragRef.current.lastY) * (canvas.height / rect.height),
+//     };
+//     dragRef.current.lastX = e.clientX; dragRef.current.lastY = e.clientY;
+//     draw(frameIndexRef.current);
+//   }, [draw]);
+//   const stopDrag = useCallback(() => { dragRef.current.active = false; }, []);
+
+//   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+//     if (e.touches.length === 2) {
+//       dragRef.current.lastDist = Math.hypot(
+//         e.touches[0].clientX - e.touches[1].clientX,
+//         e.touches[0].clientY - e.touches[1].clientY
+//       );
+//     } else {
+//       dragRef.current = { active: true, lastX: e.touches[0].clientX, lastY: e.touches[0].clientY, lastDist: 0 };
+//     }
+//   }, []);
+//   const handleTouchMove = useCallback((e: React.TouchEvent) => {
+//     e.preventDefault();
+//     const canvas = canvasRef.current; if (!canvas) return;
+//     const rect = canvas.getBoundingClientRect();
+//     const sx = canvas.width / rect.width; const sy = canvas.height / rect.height;
+//     if (e.touches.length === 2) {
+//       const dist = Math.hypot(
+//         e.touches[0].clientX - e.touches[1].clientX,
+//         e.touches[0].clientY - e.touches[1].clientY
+//       );
+//       if (dragRef.current.lastDist > 0) {
+//         const factor = dist / dragRef.current.lastDist;
+//         const cx = ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left) * sx;
+//         const cy = ((e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top)  * sy;
+//         const nz = Math.min(Math.max(zoomRef.current * factor, 0.3), 6);
+//         offsetRef.current = {
+//           x: cx - (cx - offsetRef.current.x) * (nz / zoomRef.current),
+//           y: cy - (cy - offsetRef.current.y) * (nz / zoomRef.current),
+//         };
+//         zoomRef.current = nz;
+//       }
+//       dragRef.current.lastDist = dist;
+//     } else if (dragRef.current.active) {
+//       offsetRef.current = {
+//         x: offsetRef.current.x + (e.touches[0].clientX - dragRef.current.lastX) * sx,
+//         y: offsetRef.current.y + (e.touches[0].clientY - dragRef.current.lastY) * sy,
+//       };
+//       dragRef.current.lastX = e.touches[0].clientX; dragRef.current.lastY = e.touches[0].clientY;
+//     }
+//     draw(frameIndexRef.current);
+//   }, [draw]);
+
+//   const handleDoubleClick = useCallback(() => {
+//     zoomRef.current = 1; offsetRef.current = { x: 0, y: 0 };
+//     draw(frameIndexRef.current);
+//   }, [draw]);
+
+//   return (
+//     <canvas
+//       ref={canvasRef}
+//       width={520}
+//       height={400}
+//       style={{ width: "100%", height: "100%", display: "block", cursor: dragRef.current.active ? "grabbing" : "grab" }}
+//       onWheel={handleWheel}
+//       onMouseDown={handleMouseDown}
+//       onMouseMove={handleMouseMove}
+//       onMouseUp={stopDrag}
+//       onMouseLeave={stopDrag}
+//       onTouchStart={handleTouchStart}
+//       onTouchMove={handleTouchMove}
+//       onTouchEnd={stopDrag}
+//       onDoubleClick={handleDoubleClick}
+//     />
+//   );
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    PLAYBACK CONTROLS
+// ───────────────────────────────────────────────────────────── */
+// function PlaybackControls({
+//   isPlaying, onPlay, onPause, onReplay, frameIndex, total,
+// }: {
+//   isPlaying: boolean;
+//   onPlay: () => void;
+//   onPause: () => void;
+//   onReplay: () => void;
+//   frameIndex: number;
+//   total: number;
+// }) {
+//   const pct = total > 1 ? (frameIndex / (total - 1)) * 100 : 0;
+//   const base: React.CSSProperties = {
+//     display: "flex", alignItems: "center", justifyContent: "center",
+//     border: "none", cursor: "pointer", transition: "all 0.15s",
+//   };
+//   return (
+//     <div style={{
+//       display: "flex", flexDirection: "column", gap: "8px",
+//       padding: "10px 16px 12px", flexShrink: 0,
+//       background: "rgba(8,13,26,0.92)",
+//       borderTop: "1px solid rgba(99,102,241,0.18)",
+//     }}>
+//       {/* Progress bar */}
+//       <div style={{ height: "4px", borderRadius: "4px", background: "rgba(99,102,241,0.15)", overflow: "hidden" }}>
+//         <div style={{
+//           height: "100%", width: `${pct}%`,
+//           background: "linear-gradient(90deg, #6366f1, #a78bfa)",
+//           borderRadius: "4px", transition: "width 0.08s linear",
+//         }} />
+//       </div>
+//       {/* Buttons */}
+//       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "14px" }}>
+//         <button onClick={onReplay} title="Replay" style={{
+//           ...base, width: 36, height: 36, borderRadius: "50%",
+//           background: "rgba(99,102,241,0.12)",
+//           border: "1px solid rgba(99,102,241,0.35)",
+//           color: "#a78bfa", fontSize: "18px",
+//         }}
+//           onMouseEnter={e => (e.currentTarget.style.background = "rgba(99,102,241,0.28)")}
+//           onMouseLeave={e => (e.currentTarget.style.background = "rgba(99,102,241,0.12)")}
+//         >↺</button>
+
+//         {isPlaying ? (
+//           <button onClick={onPause} title="Pause" style={{
+//             ...base, width: 46, height: 46, borderRadius: "50%",
+//             background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+//             color: "#fff", fontSize: "20px",
+//             boxShadow: "0 0 20px rgba(99,102,241,0.5)",
+//           }}
+//             onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+//             onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+//           >⏸</button>
+//         ) : (
+//           <button onClick={onPlay} title="Play" style={{
+//             ...base, width: 46, height: 46, borderRadius: "50%",
+//             background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+//             color: "#fff", fontSize: "20px",
+//             boxShadow: "0 0 20px rgba(99,102,241,0.5)",
+//           }}
+//             onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+//             onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+//           >▶</button>
+//         )}
+
+//         <span style={{
+//           fontSize: "11px", fontFamily: "monospace",
+//           color: "rgba(129,140,248,0.5)", minWidth: "70px", textAlign: "center",
+//         }}>
+//           {total > 0 ? `${frameIndex + 1} / ${total}` : "no data"}
+//         </span>
+//       </div>
+//     </div>
+//   );
+// }
+
+// /* ─────────────────────────────────────────────────────────────
+//    ROOT EXPORT
+// ───────────────────────────────────────────────────────────── */
+// export default function AvatarViewer({ keypoints, fps = 25 }: Props) {
+//   const [activeTab,  setActiveTab]  = useState<"avatar" | "skeleton">("avatar");
+//   const [isPlaying,  setIsPlaying]  = useState(false);
+//   const [frameIndex, setFrameIndex] = useState(0);
+
+//   const advanceFrame = useCallback(() => {
+//     setFrameIndex(prev => {
+//       const next = prev + 1;
+//       if (next >= keypoints.length - 1) setIsPlaying(false);
+//       return Math.min(next, keypoints.length - 1);
+//     });
+//   }, [keypoints.length]);
+
+//   useEffect(() => { setFrameIndex(0); setIsPlaying(false); }, [keypoints]);
+
+//   const tab = (active: boolean): React.CSSProperties => ({
+//     flex: 1, padding: "9px 0", border: "none", cursor: "pointer",
+//     background: active ? "rgba(99,102,241,0.2)" : "transparent",
+//     borderBottom: `2px solid ${active ? "#818cf8" : "transparent"}`,
+//     color: active ? "#c7d2fe" : "rgba(148,163,184,0.5)",
+//     fontWeight: active ? 600 : 400, fontSize: "13px",
+//     letterSpacing: "0.04em", transition: "all 0.18s",
+//   });
+
+//   return (
+//     <div style={{
+//       display: "flex", flexDirection: "column",
+//       height: "100%", width: "100%",
+//       background: "#080d1a",
+//     }}>
+//       {/* TAB BAR */}
+//       <div style={{
+//         display: "flex", flexShrink: 0,
+//         background: "rgba(8,13,26,0.98)",
+//         borderBottom: "1px solid rgba(99,102,241,0.18)",
+//       }}>
+//         <button style={tab(activeTab === "avatar")}   onClick={() => setActiveTab("avatar")}>
+//           🧍 Avatar
+//         </button>
+//         <button style={tab(activeTab === "skeleton")} onClick={() => setActiveTab("skeleton")}>
+//           🦴 Skeleton
+//         </button>
+//       </div>
+
+//       {/* VIEWER */}
+//       <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
+
+//         {/* Avatar */}
+//         <div style={{ position: "absolute", inset: 0, display: activeTab === "avatar" ? "block" : "none" }}>
+//           <Canvas camera={{ position: [0, 1, 3], fov: 50 }}>
+//             <ambientLight intensity={0.6} />
+//             <directionalLight position={[2, 4, 3]} intensity={1.4} />
+//             <AnimatedAvatar
+//               keypoints={keypoints} fps={fps}
+//               isPlaying={isPlaying} frameIndex={frameIndex}
+//               onFrameAdvance={advanceFrame}
+//             />
+//           </Canvas>
+//         </div>
+
+//         {/* Skeleton */}
+//         <div style={{
+//           position: "absolute", inset: 0,
+//           display: activeTab === "skeleton" ? "flex" : "none",
+//           alignItems: "center", justifyContent: "center",
+//         }}>
+//           {keypoints.length > 0 ? (
+//             <SkeletonViewer
+//               keypoints={keypoints} fps={fps}
+//               isPlaying={isPlaying} frameIndex={frameIndex}
+//               onFrameAdvance={advanceFrame}
+//             />
+//           ) : (
+//             <div style={{ textAlign: "center", color: "rgba(148,163,184,0.4)" }}>
+//               <div style={{ fontSize: "36px", marginBottom: "8px" }}>🦴</div>
+//               <div style={{ fontSize: "13px" }}>No keypoints loaded yet</div>
+//             </div>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* CONTROLS */}
+//       <PlaybackControls
+//         isPlaying={isPlaying}
+//         onPlay={() => setIsPlaying(true)}
+//         onPause={() => setIsPlaying(false)}
+//         onReplay={() => { setFrameIndex(0); setIsPlaying(true); }}
+//         frameIndex={frameIndex}
+//         total={keypoints.length}
+//       />
+//     </div>
+//   );
+// }
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 
 interface Props {
@@ -510,95 +3283,63 @@ const BONES = {
   l_upperarm: "LeftArm",
   l_forearm:  "LeftForeArm",
   l_hand:     "LeftHand",
-
   r_upperarm: "RightArm",
   r_forearm:  "RightForeArm",
   r_hand:     "RightHand",
-
-  l_thumb1: "LeftHandThumb1",
-  l_thumb2: "LeftHandThumb2",
-  l_thumb3: "LeftHandThumb3",
-  l_index1: "LeftHandIndex1",
-  l_index2: "LeftHandIndex2",
-  l_index3: "LeftHandIndex3",
-  l_mid1:   "LeftHandMiddle1",
-  l_mid2:   "LeftHandMiddle2",
-  l_mid3:   "LeftHandMiddle3",
-  l_ring1:  "LeftHandRing1",
-  l_ring2:  "LeftHandRing2",
-  l_ring3:  "LeftHandRing3",
-  l_pinky1: "LeftHandPinky1",
-  l_pinky2: "LeftHandPinky2",
-  l_pinky3: "LeftHandPinky3",
-
-  r_thumb1: "RightHandThumb1",
-  r_thumb2: "RightHandThumb2",
-  r_thumb3: "RightHandThumb3",
-  r_index1: "RightHandIndex1",
-  r_index2: "RightHandIndex2",
-  r_index3: "RightHandIndex3",
-  r_mid1:   "RightHandMiddle1",
-  r_mid2:   "RightHandMiddle2",
-  r_mid3:   "RightHandMiddle3",
-  r_ring1:  "RightHandRing1",
-  r_ring2:  "RightHandRing2",
-  r_ring3:  "RightHandRing3",
-  r_pinky1: "RightHandPinky1",
-  r_pinky2: "RightHandPinky2",
-  r_pinky3: "RightHandPinky3",
+  l_thumb1: "LeftHandThumb1",  l_thumb2: "LeftHandThumb2",  l_thumb3: "LeftHandThumb3",
+  l_index1: "LeftHandIndex1",  l_index2: "LeftHandIndex2",  l_index3: "LeftHandIndex3",
+  l_mid1:   "LeftHandMiddle1", l_mid2:   "LeftHandMiddle2", l_mid3:   "LeftHandMiddle3",
+  l_ring1:  "LeftHandRing1",   l_ring2:  "LeftHandRing2",   l_ring3:  "LeftHandRing3",
+  l_pinky1: "LeftHandPinky1",  l_pinky2: "LeftHandPinky2",  l_pinky3: "LeftHandPinky3",
+  r_thumb1: "RightHandThumb1", r_thumb2: "RightHandThumb2", r_thumb3: "RightHandThumb3",
+  r_index1: "RightHandIndex1", r_index2: "RightHandIndex2", r_index3: "RightHandIndex3",
+  r_mid1:   "RightHandMiddle1",r_mid2:   "RightHandMiddle2",r_mid3:   "RightHandMiddle3",
+  r_ring1:  "RightHandRing1",  r_ring2:  "RightHandRing2",  r_ring3:  "RightHandRing3",
+  r_pinky1: "RightHandPinky1", r_pinky2: "RightHandPinky2", r_pinky3: "RightHandPinky3",
 } as const;
 
 /* ─────────────────────────────────────────────────────────────
-   MEDIAPIPE → THREE CONVERSION
+   MEDIAPIPE HELPERS
 ───────────────────────────────────────────────────────────── */
 function mpToWorld(p: number[]): THREE.Vector3 {
-  return new THREE.Vector3(
-    -(p[0] - 0.5),
-    0.5 - p[1],
-    -p[2]
-  );
+  return new THREE.Vector3(-p[0], -p[1], p[2]);
 }
-
 function mpDir(a: number[], b: number[]): THREE.Vector3 {
   return mpToWorld(b).sub(mpToWorld(a)).normalize();
 }
 
-function midpoint(a: number[], b: number[]): number[] {
-  return a.map((v, i) => (v + b[i]) / 2);
-}
-
 /* ─────────────────────────────────────────────────────────────
-   ANIMATED AVATAR
+   ANIMATED AVATAR (3-D)
 ───────────────────────────────────────────────────────────── */
 function AnimatedAvatar({
   keypoints,
   fps = 25,
   isPlaying,
-}: Props & { isPlaying: boolean }) {
-
+  frameIndex,
+  onFrameAdvance,
+}: Props & {
+  isPlaying: boolean;
+  frameIndex: number;
+  onFrameAdvance: () => void;
+}) {
   const { scene } = useGLTF("/avatar.glb");
-
-  const bones = useRef<Record<string, THREE.Bone>>({});
-  const restDir = useRef<Record<string, THREE.Vector3>>({});
+  const bonesRef   = useRef<Record<string, THREE.Bone>>({});
+  const restDir    = useRef<Record<string, THREE.Vector3>>({});
   const restLocalQ = useRef<Record<string, THREE.Quaternion>>({});
-
-  const frameIndex = useRef(0);
-  const elapsed = useRef(0);
+  const elapsed    = useRef(0);
   const frameInterval = 1 / fps;
 
-  /* ── Bone Discovery ───────────────────────── */
   useEffect(() => {
     scene.traverse((obj) => {
       if (!(obj as THREE.Bone).isBone) return;
       const bone = obj as THREE.Bone;
-
-      bones.current[bone.name] = bone;
+      bonesRef.current[bone.name]   = bone;
       restLocalQ.current[bone.name] = bone.quaternion.clone();
-
-      const childBone = bone.children.find(
-        (c) => (c as THREE.Bone).isBone
-      ) as THREE.Object3D | undefined;
-
+    });
+    scene.traverse((obj) => {
+      if (!(obj as THREE.Bone).isBone) return;
+      const bone = obj as THREE.Bone;
+      const childBone = bone.children.find(c => (c as THREE.Bone).isBone) as THREE.Object3D | undefined;
       if (childBone) {
         const bPos = new THREE.Vector3();
         const cPos = new THREE.Vector3();
@@ -609,42 +3350,36 @@ function AnimatedAvatar({
     });
   }, [scene]);
 
-  /* ── Reset when new animation arrives ───────────────────────── */
-  useEffect(() => {
-    frameIndex.current = 0;
-    elapsed.current = 0;
-  }, [keypoints]);
+  useEffect(() => { elapsed.current = 0; }, [keypoints]);
 
-  /* ── Rotation Helper (No Drift) ───────────────────────── */
-  function rotateBoneToward(
-    boneName: string,
-    targetDir: THREE.Vector3,
-    alpha = 0.35
-  ) {
-    const bone = bones.current[boneName];
-    const rDir = restDir.current[boneName];
+  function rotateBoneToward(boneName: string, targetDir: THREE.Vector3, alpha = 1.0) {
+    const bone  = bonesRef.current[boneName];
+    const rDir  = restDir.current[boneName];
     const restQ = restLocalQ.current[boneName];
-
     if (!bone || !rDir || !restQ || targetDir.lengthSq() < 0.001) return;
-
-    const worldDelta = new THREE.Quaternion()
-      .setFromUnitVectors(rDir, targetDir);
-
-    const parentWorld = new THREE.Quaternion();
-    if (bone.parent) bone.parent.getWorldQuaternion(parentWorld);
-
-    const localDelta = parentWorld.clone().invert().multiply(worldDelta);
-    const targetQuat = restQ.clone().multiply(localDelta);
-
-    bone.quaternion.slerp(targetQuat, alpha);
+    bone.quaternion.copy(restQ);
+    const restWorldQ = new THREE.Quaternion();
+    bone.getWorldQuaternion(restWorldQ);
+    const dot = rDir.dot(targetDir);
+    if (dot < -0.9999) {
+      const perp = Math.abs(rDir.x) < 0.9 ? new THREE.Vector3(1,0,0) : new THREE.Vector3(0,1,0);
+      const axis = new THREE.Vector3().crossVectors(rDir, perp).normalize();
+      const delta180 = new THREE.Quaternion().setFromAxisAngle(axis, Math.PI);
+      const desired  = delta180.multiply(restWorldQ);
+      const parentWorldQ = new THREE.Quaternion();
+      if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQ);
+      bone.quaternion.copy(parentWorldQ.invert().multiply(desired));
+      return;
+    }
+    const delta = new THREE.Quaternion().setFromUnitVectors(rDir, targetDir);
+    const desiredWorldQ = delta.multiply(restWorldQ);
+    const parentWorldQ  = new THREE.Quaternion();
+    if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQ);
+    bone.quaternion.slerp(parentWorldQ.invert().multiply(desiredWorldQ), alpha);
   }
 
-  /* ── Finger Driver ───────────────────────── */
-  function driveFinger(
-    lm: number[][],
-    mcp: number, pip: number, dip: number, tip: number,
-    b1: string, b2: string, b3: string
-  ) {
+  function driveFinger(lm: number[][], mcp: number, pip: number, dip: number, tip: number,
+    b1: string, b2: string, b3: string) {
     rotateBoneToward(b1, mpDir(lm[mcp], lm[pip]));
     rotateBoneToward(b2, mpDir(lm[pip], lm[dip]));
     rotateBoneToward(b3, mpDir(lm[dip], lm[tip]));
@@ -653,84 +3388,608 @@ function AnimatedAvatar({
   function driveHand(hand: number[][], side: "l" | "r") {
     if (!hand || hand.length < 21) return;
     const s = side;
-
-    rotateBoneToward(
-      BONES[`${s}_hand`],
-      mpDir(hand[0], midpoint(hand[5], hand[17]))
-    );
-
-    driveFinger(hand, 1,2,3,4,  BONES[`${s}_thumb1`], BONES[`${s}_thumb2`], BONES[`${s}_thumb3`]);
-    driveFinger(hand, 5,6,7,8,  BONES[`${s}_index1`], BONES[`${s}_index2`], BONES[`${s}_index3`]);
-    driveFinger(hand, 9,10,11,12,BONES[`${s}_mid1`],   BONES[`${s}_mid2`],   BONES[`${s}_mid3`]);
-    driveFinger(hand, 13,14,15,16,BONES[`${s}_ring1`], BONES[`${s}_ring2`],  BONES[`${s}_ring3`]);
-    driveFinger(hand, 17,18,19,20,BONES[`${s}_pinky1`],BONES[`${s}_pinky2`], BONES[`${s}_pinky3`]);
+    rotateBoneToward(BONES[`${s}_hand`], mpDir(hand[0], hand[9]));
+    driveFinger(hand,1,2,3,4,     BONES[`${s}_thumb1`],BONES[`${s}_thumb2`],BONES[`${s}_thumb3`]);
+    driveFinger(hand,5,6,7,8,     BONES[`${s}_index1`],BONES[`${s}_index2`],BONES[`${s}_index3`]);
+    driveFinger(hand,9,10,11,12,  BONES[`${s}_mid1`],  BONES[`${s}_mid2`],  BONES[`${s}_mid3`]);
+    driveFinger(hand,13,14,15,16, BONES[`${s}_ring1`], BONES[`${s}_ring2`], BONES[`${s}_ring3`]);
+    driveFinger(hand,17,18,19,20, BONES[`${s}_pinky1`],BONES[`${s}_pinky2`],BONES[`${s}_pinky3`]);
   }
 
-  /* ── Animation Loop ───────────────────────── */
   useFrame((_, delta) => {
-    if (!isPlaying) return;
-    if (!keypoints?.length) return;
-
+    if (!isPlaying || !keypoints?.length) return;
     elapsed.current += Math.min(delta, 0.1);
-
     if (elapsed.current >= frameInterval) {
       elapsed.current = 0;
-
-      // STOP at last frame (no loop)
-      if (frameIndex.current < keypoints.length - 1) {
-        frameIndex.current++;
-      }
+      if (frameIndex < keypoints.length - 1) onFrameAdvance();
     }
-
-    const frame = keypoints[frameIndex.current];
+    const frame = keypoints[frameIndex];
     if (!frame) return;
-
-    const pose = frame.pose as number[][] | undefined;
-    const left = frame.left_hand as number[][] | undefined;
+    const pose  = frame.pose       as number[][] | undefined;
+    const left  = frame.left_hand  as number[][] | undefined;
     const right = frame.right_hand as number[][] | undefined;
-
     if (pose && pose.length >= 17) {
-      rotateBoneToward(BONES.l_upperarm, mpDir(pose[11], pose[13]));
-      rotateBoneToward(BONES.l_forearm,  mpDir(pose[13], pose[15]));
-      rotateBoneToward(BONES.r_upperarm, mpDir(pose[12], pose[14]));
-      rotateBoneToward(BONES.r_forearm,  mpDir(pose[14], pose[16]));
+      rotateBoneToward(BONES.r_upperarm, mpDir(pose[11], pose[13]));
+      rotateBoneToward(BONES.r_forearm,  mpDir(pose[13], pose[15]));
+      rotateBoneToward(BONES.l_upperarm, mpDir(pose[12], pose[14]));
+      rotateBoneToward(BONES.l_forearm,  mpDir(pose[14], pose[16]));
     }
-
-    if (left) driveHand(left, "l");
-    if (right) driveHand(right, "r");
+    if (left)  driveHand(left,  "r");
+    if (right) driveHand(right, "l");
   });
 
   return (
-    <group rotation={[0, Math.PI, 0]} position={[0, -1, 0]}>
+    <group position={[0, -0.8, 0]}>
       <primitive object={scene} scale={1} />
     </group>
   );
 }
 
 /* ─────────────────────────────────────────────────────────────
-   CANVAS + PLAY/PAUSE UI
+   SKELETON CONNECTIONS
 ───────────────────────────────────────────────────────────── */
-export default function AvatarViewer({ keypoints, fps = 25 }: Props) {
-  const [isPlaying, setIsPlaying] = useState(false);
+const POSE_CONNECTIONS: [number, number][] = [
+  [11,12],[11,13],[13,15],[12,14],[14,16],
+  [11,23],[12,24],[23,24],[23,25],[24,26],
+  [25,27],[26,28],[27,29],[28,30],[29,31],[30,32],
+];
+const HAND_CONNECTIONS: [number, number][] = [
+  [0,1],[1,2],[2,3],[3,4],
+  [0,5],[5,6],[6,7],[7,8],
+  [0,9],[9,10],[10,11],[11,12],
+  [0,13],[13,14],[14,15],[15,16],
+  [0,17],[17,18],[18,19],[19,20],
+  [5,9],[9,13],[13,17],
+];
+
+/* ─────────────────────────────────────────────────────────────
+   SKELETON VIEWER (2-D canvas)
+───────────────────────────────────────────────────────────── */
+function SkeletonViewer({
+  keypoints,
+  fps,
+  isPlaying,
+  frameIndex,
+  onFrameAdvance,
+}: {
+  keypoints: any[];
+  fps: number;
+  isPlaying: boolean;
+  frameIndex: number;
+  onFrameAdvance: () => void;
+}) {
+  const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const rafRef       = useRef<number>(0);
+  const lastTimeRef  = useRef<number>(0);
+  const frameInterval = 1000 / fps;
+
+  // Keep a ref to the latest values so RAF closure stays fresh
+  const isPlayingRef   = useRef(isPlaying);
+  const frameIndexRef  = useRef(frameIndex);
+  const totalRef       = useRef(keypoints.length);
+  useEffect(() => { isPlayingRef.current  = isPlaying;       }, [isPlaying]);
+  useEffect(() => { frameIndexRef.current = frameIndex;      }, [frameIndex]);
+  useEffect(() => { totalRef.current      = keypoints.length;}, [keypoints.length]);
+
+  // ── Zoom / pan state ───────────────────────────────────
+  const zoomRef   = useRef(1);
+  const offsetRef = useRef({ x: 0, y: 0 });
+  const dragRef   = useRef<{ active: boolean; lastX: number; lastY: number; lastDist: number }>({
+    active: false, lastX: 0, lastY: 0, lastDist: 0,
+  });
+
+  // ── draw one frame ──────────────────────────────────────
+  const draw = useCallback((frameIdx: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const W = canvas.width;
+    const H = canvas.height;
+
+    ctx.fillStyle = "#080d1a";
+    ctx.fillRect(0, 0, W, H);
+
+    const z = zoomRef.current;
+    const ox = offsetRef.current.x;
+    const oy = offsetRef.current.y;
+    ctx.save();
+    ctx.setTransform(z, 0, 0, z, ox, oy);
+
+    ctx.strokeStyle = "rgba(99,102,241,0.08)";
+    ctx.lineWidth = 1 / z;
+    for (let x = -W; x < W * 2; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H*2); ctx.stroke(); }
+    for (let y = -H; y < H * 2; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W*2,y); ctx.stroke(); }
+
+    const frame = keypoints[frameIdx];
+    if (!frame) return;
+
+    const pose  = frame.pose       as number[][] | undefined;
+    const left  = frame.left_hand  as number[][] | undefined;
+    const right = frame.right_hand as number[][] | undefined;
+
+    // pose world coords: negate x to mirror for viewer, keep y natural (up = up)
+    function poseXY(pt: number[]): [number, number] {
+      return [(-pt[0] * 0.55 + 0.5) * W, (pt[1] * 0.55 + 0.38) * H];
+    }
+    // Hand landmarks are in world space (metres), wrist-relative after subtracting lm[0].
+    // Use the SAME scale as poseXY (0.55 * canvas dimension) so the hand
+    // sits flush against the pose wrist with no gap or overlap.
+    // Detect coord space: world landmarks are small (~0.0–0.3), image landmarks are large (0–1)
+    // Image-space landmarks have x already in screen direction; world-space need negation to mirror.
+    function handXY(pt: number[], wristLm: number[], wx: number, wy: number, flipX = false): [number, number] {
+      const rx = pt[0] - wristLm[0];
+      const ry = pt[1] - wristLm[1];
+      return [wx + (flipX ? -rx : rx) * 0.55 * W, wy + ry * 0.55 * H];
+    }
+
+    // ── Face (landmarks 0–10) ──────────────────────────────
+    if (pose && pose.length >= 11) {
+      const nose   = pose[0]  ? poseXY(pose[0])  : null;
+      const lEye   = pose[2]  ? poseXY(pose[2])  : null;
+      const rEye   = pose[5]  ? poseXY(pose[5])  : null;
+      const lEar   = pose[7]  ? poseXY(pose[7])  : null;
+      const rEar   = pose[8]  ? poseXY(pose[8])  : null;
+      const mouthL = pose[9]  ? poseXY(pose[9])  : null;
+      const mouthR = pose[10] ? poseXY(pose[10]) : null;
+
+      // Head circle from ear span
+      if (lEar && rEar) {
+        const hcx = (lEar[0] + rEar[0]) / 2;
+        const hcy = (lEar[1] + rEar[1]) / 2;
+        const hr  = Math.hypot(lEar[0] - rEar[0], lEar[1] - rEar[1]) * 0.65;
+        ctx.beginPath(); ctx.arc(hcx, hcy, hr, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(167,139,250,0.45)"; ctx.lineWidth = 1.5; ctx.stroke();
+      }
+
+      // Nose → eye guide lines
+      if (nose && lEye) {
+        ctx.beginPath(); ctx.moveTo(nose[0], nose[1]); ctx.lineTo(lEye[0], lEye[1]);
+        ctx.strokeStyle = "rgba(167,139,250,0.25)"; ctx.lineWidth = 1; ctx.stroke();
+      }
+      if (nose && rEye) {
+        ctx.beginPath(); ctx.moveTo(nose[0], nose[1]); ctx.lineTo(rEye[0], rEye[1]);
+        ctx.strokeStyle = "rgba(167,139,250,0.25)"; ctx.lineWidth = 1; ctx.stroke();
+      }
+
+      // Mouth
+      if (mouthL && mouthR) {
+        ctx.beginPath(); ctx.moveTo(mouthL[0], mouthL[1]); ctx.lineTo(mouthR[0], mouthR[1]);
+        ctx.strokeStyle = "rgba(244,114,182,0.85)"; ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.stroke();
+      }
+
+      // Eyes
+      for (const eye of [lEye, rEye]) {
+        if (!eye) continue;
+        ctx.beginPath(); ctx.arc(eye[0], eye[1], 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#a5b4fc"; ctx.shadowColor = "#818cf8"; ctx.shadowBlur = 8;
+        ctx.fill(); ctx.shadowBlur = 0;
+      }
+
+      // Ears
+      for (const ear of [lEar, rEar]) {
+        if (!ear) continue;
+        ctx.beginPath(); ctx.arc(ear[0], ear[1], 3, 0, Math.PI * 2);
+        ctx.fillStyle = "#818cf8"; ctx.fill();
+      }
+
+      // Nose
+      if (nose) {
+        ctx.beginPath(); ctx.arc(nose[0], nose[1], 3, 0, Math.PI * 2);
+        ctx.fillStyle = "#c4b5fd"; ctx.shadowColor = "#a78bfa"; ctx.shadowBlur = 6;
+        ctx.fill(); ctx.shadowBlur = 0;
+      }
+    }
+
+    // ── Body skeleton (landmarks 11+) ──────────────────────
+    if (pose && pose.length >= 17) {
+      ctx.lineCap = "round";
+      for (const [a, b] of POSE_CONNECTIONS) {
+        if (!pose[a] || !pose[b]) continue;
+        const [ax, ay] = poseXY(pose[a]);
+        const [bx, by] = poseXY(pose[b]);
+        const grad = ctx.createLinearGradient(ax, ay, bx, by);
+        grad.addColorStop(0, "rgba(99,102,241,0.9)");
+        grad.addColorStop(1, "rgba(167,139,250,0.9)");
+        ctx.strokeStyle = grad; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+      }
+      for (let i = 11; i <= 32; i++) {
+        if (!pose[i]) continue;
+        const [x, y] = poseXY(pose[i]);
+        const isWrist = i === 15 || i === 16;
+        ctx.beginPath(); ctx.arc(x, y, isWrist ? 5 : 4, 0, Math.PI * 2);
+        ctx.fillStyle   = isWrist ? "#f472b6" : "#818cf8";
+        ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
+        ctx.fill(); ctx.shadowBlur = 0;
+      }
+    }
+
+    const leftWrist  = pose?.[15] ? poseXY(pose[15]) : [W * 0.65, H * 0.62] as [number,number];
+    const rightWrist = pose?.[16] ? poseXY(pose[16]) : [W * 0.35, H * 0.62] as [number,number];
+
+    function drawHand(c: CanvasRenderingContext2D, lm: number[][], wx: number, wy: number, lineColor: string, dotColor: string) {
+      if (!lm || lm.length < 21) return;
+      c.lineCap = "round";
+      c.lineJoin = "round";
+      // Detect coordinate space by checking z values:
+      // - World-space landmarks (both words AND alphabet): z has meaningful depth, e.g. -0.005 to -0.04
+      // - The wrist landmark [0] always has z = 0 (it's the origin), but finger landmarks have real z.
+      // - True image-space (0-1 normalised) landmarks would have z near 0 for ALL points.
+      // So: if ALL z values are extremely close to 0 (< 0.001), it's image-space.
+      // Both word and alphabet keypoints are world-space — they always need the flip.
+      const maxAbsZ = Math.max(...lm.slice(1).map(pt => Math.abs(pt[2])));
+      const isImageSpace = maxAbsZ < 0.001;
+      const flipX = !isImageSpace; // world-space (both words + alphabet) always needs flip
+
+      // Each finger as a chain of straight lines — exactly like the Python MediaPipe style
+      // Chains: thumb=[0,1,2,3,4], index=[0,5,6,7,8], middle=[0,9,10,11,12],
+      //         ring=[0,13,14,15,16], pinky=[0,17,18,19,20]
+      // Palm cross-connections: 5-9, 9-13, 13-17
+      const chains = [
+        [0, 1, 2, 3, 4],       // thumb
+        [0, 5, 6, 7, 8],       // index
+        [0, 9, 10, 11, 12],    // middle
+        [0, 13, 14, 15, 16],   // ring
+        [0, 17, 18, 19, 20],   // pinky
+      ];
+      const palmLinks: [number, number][] = [[5,9],[9,13],[13,17]];
+
+      // ── Bone lines ─────────────────────────────────────────
+      c.strokeStyle = lineColor;
+      // Slightly thicker near palm, thinner near fingertip
+      chains.forEach((chain) => {
+        for (let s = 0; s < chain.length - 1; s++) {
+          const [ax, ay] = handXY(lm[chain[s]],   lm[0], wx, wy, flipX);
+          const [bx, by] = handXY(lm[chain[s+1]], lm[0], wx, wy, flipX);
+          // Thicker at palm (s=0), thinner near tip
+          c.lineWidth = s === 0 ? 2.5 : s === 1 ? 2.0 : 1.6;
+          c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+        }
+      });
+
+      // Palm knuckle cross-bar
+      c.lineWidth = 1.8;
+      palmLinks.forEach(([a, b]) => {
+        const [ax, ay] = handXY(lm[a], lm[0], wx, wy, flipX);
+        const [bx, by] = handXY(lm[b], lm[0], wx, wy, flipX);
+        c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+      });
+
+      // ── Joint dots ─────────────────────────────────────────
+      for (let i = 0; i < 21; i++) {
+        const [x, y] = handXY(lm[i], lm[0], wx, wy, flipX);
+        // Tips (4,8,12,16,20) are white; knuckles are dotColor; wrist is larger
+        const isTip   = [4, 8, 12, 16, 20].includes(i);
+        const isWrist = i === 0;
+        const r = isWrist ? 5 : isTip ? 3.5 : 2.5;
+        c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2);
+        c.fillStyle   = isTip ? "#ffffff" : dotColor;
+        c.shadowColor = dotColor;
+        c.shadowBlur  = isTip ? 10 : isWrist ? 14 : 5;
+        c.fill();
+        c.shadowBlur  = 0;
+      }
+    }
+
+    if (left)  drawHand(ctx, left,  rightWrist[0], rightWrist[1], "rgba(251,191,36,0.75)",  "#fbbf24");
+    if (right) drawHand(ctx, right, leftWrist[0],  leftWrist[1],  "rgba(52,211,153,0.75)",  "#34d399");
+
+    ctx.restore(); // end zoom transform
+
+    // ── HUD fixed to screen ────────────────────────────────
+    ([["#818cf8","Pose"],["#fbbf24","Left Hand"],["#34d399","Right Hand"]] as [string,string][])
+      .forEach(([color, label], i) => {
+        ctx.beginPath(); ctx.arc(14, H - 14 - i * 18, 5, 0, Math.PI * 2);
+        ctx.fillStyle = color; ctx.shadowBlur = 0; ctx.fill();
+        ctx.fillStyle = "rgba(203,213,225,0.7)";
+        ctx.font = "11px monospace"; ctx.fillText(label, 24, H - 10 - i * 18);
+      });
+    ctx.fillStyle = "rgba(129,140,248,0.45)";
+    ctx.font = "10px monospace"; ctx.textAlign = "right";
+    ctx.fillText(`${frameIdx + 1} / ${keypoints.length}`, W - 8, H - 8);
+    if (Math.abs(zoomRef.current - 1) > 0.05)
+      ctx.fillText(`${(zoomRef.current * 100).toFixed(0)}%`, W - 8, H - 20);
+    ctx.textAlign = "left";
+  }, [keypoints]);
+
+  // Redraw whenever frameIndex changes
+  useEffect(() => { draw(frameIndex); }, [frameIndex, draw]);
+
+  // RAF loop for advancing frames
+  useEffect(() => {
+    cancelAnimationFrame(rafRef.current);
+    lastTimeRef.current = 0;
+    if (!isPlaying) return;
+
+    const loop = (ts: number) => {
+      if (!lastTimeRef.current) lastTimeRef.current = ts;
+      if (ts - lastTimeRef.current >= frameInterval) {
+        lastTimeRef.current = ts;
+        if (frameIndexRef.current < totalRef.current - 1) {
+          onFrameAdvance();
+        }
+      }
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [isPlaying, frameInterval, onFrameAdvance]);
+
+  // ── Zoom / pan handlers ───────────────────────────────
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const sx = canvas.width / rect.width;
+    const sy = canvas.height / rect.height;
+    const mx = (e.clientX - rect.left) * sx;
+    const my = (e.clientY - rect.top)  * sy;
+    const factor = e.deltaY < 0 ? 1.1 : 0.9;
+    const nz = Math.min(Math.max(zoomRef.current * factor, 0.3), 6);
+    offsetRef.current = {
+      x: mx - (mx - offsetRef.current.x) * (nz / zoomRef.current),
+      y: my - (my - offsetRef.current.y) * (nz / zoomRef.current),
+    };
+    zoomRef.current = nz;
+    draw(frameIndexRef.current);
+  }, [draw]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    dragRef.current = { active: true, lastX: e.clientX, lastY: e.clientY, lastDist: 0 };
+  }, []);
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!dragRef.current.active) return;
+    const canvas = canvasRef.current; if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    offsetRef.current = {
+      x: offsetRef.current.x + (e.clientX - dragRef.current.lastX) * (canvas.width / rect.width),
+      y: offsetRef.current.y + (e.clientY - dragRef.current.lastY) * (canvas.height / rect.height),
+    };
+    dragRef.current.lastX = e.clientX; dragRef.current.lastY = e.clientY;
+    draw(frameIndexRef.current);
+  }, [draw]);
+  const stopDrag = useCallback(() => { dragRef.current.active = false; }, []);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      dragRef.current.lastDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+    } else {
+      dragRef.current = { active: true, lastX: e.touches[0].clientX, lastY: e.touches[0].clientY, lastDist: 0 };
+    }
+  }, []);
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    const canvas = canvasRef.current; if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const sx = canvas.width / rect.width; const sy = canvas.height / rect.height;
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      if (dragRef.current.lastDist > 0) {
+        const factor = dist / dragRef.current.lastDist;
+        const cx = ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left) * sx;
+        const cy = ((e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top)  * sy;
+        const nz = Math.min(Math.max(zoomRef.current * factor, 0.3), 6);
+        offsetRef.current = {
+          x: cx - (cx - offsetRef.current.x) * (nz / zoomRef.current),
+          y: cy - (cy - offsetRef.current.y) * (nz / zoomRef.current),
+        };
+        zoomRef.current = nz;
+      }
+      dragRef.current.lastDist = dist;
+    } else if (dragRef.current.active) {
+      offsetRef.current = {
+        x: offsetRef.current.x + (e.touches[0].clientX - dragRef.current.lastX) * sx,
+        y: offsetRef.current.y + (e.touches[0].clientY - dragRef.current.lastY) * sy,
+      };
+      dragRef.current.lastX = e.touches[0].clientX; dragRef.current.lastY = e.touches[0].clientY;
+    }
+    draw(frameIndexRef.current);
+  }, [draw]);
+
+  const handleDoubleClick = useCallback(() => {
+    zoomRef.current = 1; offsetRef.current = { x: 0, y: 0 };
+    draw(frameIndexRef.current);
+  }, [draw]);
 
   return (
-    <>
-      <div style={{ position: "absolute", zIndex: 10 }}>
-        <button onClick={() => setIsPlaying(true)}>▶ Play</button>
-        <button onClick={() => setIsPlaying(false)}>⏸ Pause</button>
+    <canvas
+      ref={canvasRef}
+      width={520}
+      height={400}
+      style={{ width: "100%", height: "100%", display: "block", cursor: dragRef.current.active ? "grabbing" : "grab" }}
+      onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={stopDrag}
+      onMouseLeave={stopDrag}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={stopDrag}
+      onDoubleClick={handleDoubleClick}
+    />
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PLAYBACK CONTROLS
+───────────────────────────────────────────────────────────── */
+function PlaybackControls({
+  isPlaying, onPlay, onPause, onReplay, frameIndex, total,
+}: {
+  isPlaying: boolean;
+  onPlay: () => void;
+  onPause: () => void;
+  onReplay: () => void;
+  frameIndex: number;
+  total: number;
+}) {
+  const pct = total > 1 ? (frameIndex / (total - 1)) * 100 : 0;
+  const base: React.CSSProperties = {
+    display: "flex", alignItems: "center", justifyContent: "center",
+    border: "none", cursor: "pointer", transition: "all 0.15s",
+  };
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", gap: "8px",
+      padding: "10px 16px 12px", flexShrink: 0,
+      background: "rgba(8,13,26,0.92)",
+      borderTop: "1px solid rgba(99,102,241,0.18)",
+    }}>
+      {/* Progress bar */}
+      <div style={{ height: "4px", borderRadius: "4px", background: "rgba(99,102,241,0.15)", overflow: "hidden" }}>
+        <div style={{
+          height: "100%", width: `${pct}%`,
+          background: "linear-gradient(90deg, #6366f1, #a78bfa)",
+          borderRadius: "4px", transition: "width 0.08s linear",
+        }} />
+      </div>
+      {/* Buttons */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "14px" }}>
+        <button onClick={onReplay} title="Replay" style={{
+          ...base, width: 36, height: 36, borderRadius: "50%",
+          background: "rgba(99,102,241,0.12)",
+          border: "1px solid rgba(99,102,241,0.35)",
+          color: "#a78bfa", fontSize: "18px",
+        }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(99,102,241,0.28)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "rgba(99,102,241,0.12)")}
+        >↺</button>
+
+        {isPlaying ? (
+          <button onClick={onPause} title="Pause" style={{
+            ...base, width: 46, height: 46, borderRadius: "50%",
+            background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+            color: "#fff", fontSize: "20px",
+            boxShadow: "0 0 20px rgba(99,102,241,0.5)",
+          }}
+            onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+            onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+          >⏸</button>
+        ) : (
+          <button onClick={onPlay} title="Play" style={{
+            ...base, width: 46, height: 46, borderRadius: "50%",
+            background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+            color: "#fff", fontSize: "20px",
+            boxShadow: "0 0 20px rgba(99,102,241,0.5)",
+          }}
+            onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+            onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+          >▶</button>
+        )}
+
+        <span style={{
+          fontSize: "11px", fontFamily: "monospace",
+          color: "rgba(129,140,248,0.5)", minWidth: "70px", textAlign: "center",
+        }}>
+          {total > 0 ? `${frameIndex + 1} / ${total}` : "no data"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ROOT EXPORT
+───────────────────────────────────────────────────────────── */
+export default function AvatarViewer({ keypoints, fps = 25 }: Props) {
+  const [activeTab,  setActiveTab]  = useState<"avatar" | "skeleton">("avatar");
+  const [isPlaying,  setIsPlaying]  = useState(false);
+  const [frameIndex, setFrameIndex] = useState(0);
+
+  const advanceFrame = useCallback(() => {
+    setFrameIndex(prev => {
+      const next = prev + 1;
+      if (next >= keypoints.length - 1) setIsPlaying(false);
+      return Math.min(next, keypoints.length - 1);
+    });
+  }, [keypoints.length]);
+
+  useEffect(() => { setFrameIndex(0); setIsPlaying(false); }, [keypoints]);
+
+  const tab = (active: boolean): React.CSSProperties => ({
+    flex: 1, padding: "9px 0", border: "none", cursor: "pointer",
+    background: active ? "rgba(99,102,241,0.2)" : "transparent",
+    borderBottom: `2px solid ${active ? "#818cf8" : "transparent"}`,
+    color: active ? "#c7d2fe" : "rgba(148,163,184,0.5)",
+    fontWeight: active ? 600 : 400, fontSize: "13px",
+    letterSpacing: "0.04em", transition: "all 0.18s",
+  });
+
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column",
+      height: "100%", width: "100%",
+      background: "#080d1a",
+    }}>
+      {/* TAB BAR */}
+      <div style={{
+        display: "flex", flexShrink: 0,
+        background: "rgba(8,13,26,0.98)",
+        borderBottom: "1px solid rgba(99,102,241,0.18)",
+      }}>
+        <button style={tab(activeTab === "avatar")}   onClick={() => setActiveTab("avatar")}>
+          🧍 Avatar
+        </button>
+        <button style={tab(activeTab === "skeleton")} onClick={() => setActiveTab("skeleton")}>
+          🦴 Skeleton
+        </button>
       </div>
 
-      <Canvas camera={{ position: [0, 1, -3], fov: 50 }}>
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[2, 4, 3]} intensity={1.4} />
-        <AnimatedAvatar
-          keypoints={keypoints}
-          fps={fps}
-          isPlaying={isPlaying}
-        />
-      </Canvas>
-    </>
+      {/* VIEWER */}
+      <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
+
+        {/* Avatar */}
+        <div style={{ position: "absolute", inset: 0, display: activeTab === "avatar" ? "block" : "none" }}>
+          <Canvas camera={{ position: [0, 1, 3], fov: 50 }}>
+            <ambientLight intensity={0.6} />
+            <directionalLight position={[2, 4, 3]} intensity={1.4} />
+            <AnimatedAvatar
+              keypoints={keypoints} fps={fps}
+              isPlaying={isPlaying} frameIndex={frameIndex}
+              onFrameAdvance={advanceFrame}
+            />
+          </Canvas>
+        </div>
+
+        {/* Skeleton */}
+        <div style={{
+          position: "absolute", inset: 0,
+          display: activeTab === "skeleton" ? "flex" : "none",
+          alignItems: "center", justifyContent: "center",
+        }}>
+          {keypoints.length > 0 ? (
+            <SkeletonViewer
+              keypoints={keypoints} fps={fps}
+              isPlaying={isPlaying} frameIndex={frameIndex}
+              onFrameAdvance={advanceFrame}
+            />
+          ) : (
+            <div style={{ textAlign: "center", color: "rgba(148,163,184,0.4)" }}>
+              <div style={{ fontSize: "36px", marginBottom: "8px" }}>🦴</div>
+              <div style={{ fontSize: "13px" }}>No keypoints loaded yet</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* CONTROLS */}
+      <PlaybackControls
+        isPlaying={isPlaying}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onReplay={() => { setFrameIndex(0); setIsPlaying(true); }}
+        frameIndex={frameIndex}
+        total={keypoints.length}
+      />
+    </div>
   );
-  console.log("Keypoints length:", keypoints?.length);
-console.log("First frame:", keypoints?.[0]);
 }
