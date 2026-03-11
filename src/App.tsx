@@ -1,13 +1,3 @@
-import React from 'react';
-import {
-  Menu,
-  Play,
-  ChevronRight,
-  BookOpen,
-  Mic,
-  Video,
-  Cpu
-} from 'lucide-react';
 
 // Inline styles for the teal/purple theme matching the reference image
 const styles = `
@@ -1194,7 +1184,7 @@ function App() {
               <a href="#features">Features</a>
               <a href="#pipeline">Pipeline</a>
               <button className="btn-primary" onClick={() => setPage('demo')}>
-                Launch Demo
+                Launch
               </button>
             </div>
           </div>
@@ -1210,9 +1200,9 @@ function App() {
                 for Everyone
               </h1>
               <p className="hero-desc">
-                signifyEd transforms speech and text into accurate Indian Sign Language
-                using Natural Language Processing and 3D Avatar Animation —
-                making education accessible for hearing- and speech-impaired learners.
+                SignifyEd transforms video,speech and text into accurate Indian Sign Language
+                using Natural Language Processing and 3D Avatar Animation. Which
+                makes education accessible for hearing and speech-impaired learners.
               </p>
               <div className="hero-actions">
                 <button className="btn-hero-outline" onClick={() => {
@@ -1246,8 +1236,8 @@ function App() {
           <div className="features-grid">
             <div className="feature-card">
               <div className="feature-icon"><Mic size={24} /></div>
-              <div className="feature-title">Audio to Text</div>
-              <p className="feature-desc">Converts speech input into structured textual data using advanced speech recognition models.</p>
+              <div className="feature-title">Audio / Video to Text</div>
+              <p className="feature-desc">Converts speech or video input into structured textual data using advanced speech recognition models.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon"><Cpu size={24} /></div>
@@ -1268,12 +1258,12 @@ function App() {
             <div className="section-header">
               <div className="section-label">Workflow</div>
               <h2 className="section-title">System Pipeline</h2>
-              <p className="section-sub">From raw input to signed output — every step is AI-driven.</p>
+              <p className="section-sub">From raw input to signed output </p>
             </div>
             <div className="pipeline-flow">
               <div className="pipeline-step">
                 <div className="pipeline-dot pipeline-dot-1">🎙️</div>
-                <span className="pipeline-label">Speech / Text</span>
+                <span className="pipeline-label">Speech / Text / Video</span>
               </div>
               <div className="pipeline-arrow">›</div>
               <div className="pipeline-step">
@@ -1300,15 +1290,15 @@ function App() {
             <div className="section-label">People</div>
             <h2 className="section-title">Meet the Team</h2>
             <p className="section-sub">
-              The minds behind signifyEd — passionate about accessibility and inclusive technology.
+              The minds behind signifyEd 
             </p>
           </div>
           <div className="team-grid">
             {[
-              { emoji: '👩‍💻', name: 'Fathima Varsha',  role: 'NLP Engineer',   desc: 'Specializes in ISL grammar systems and linguistic modeling.' },
-              { emoji: '👩‍💻', name: 'Neha Meharin',   role: 'UI/UX Designer', desc: 'Crafts accessible, intuitive interfaces for diverse users.' },
-              { emoji: '👩‍💻', name: 'Neha TK',    role: 'ML Researcher',  desc: 'Develops sign recognition and avatar animation pipelines.' },
-              { emoji: '👨‍💼', name: 'Muhammed Ismail M',     role: 'Project Lead',   desc: 'Drives vision, coordination, and stakeholder engagement.' },
+              { emoji: '👩‍💻', name: 'Fathima Varsha',  role: 'Developer' },
+              { emoji: '👩‍💻', name: 'Neha Meharin',   role: 'Developer'},
+              { emoji: '👩‍💻', name: 'Neha TK',    role: 'Developer'},
+              { emoji: '👨‍💼', name: 'Muhammed Ismail M',     role: 'Developer' },
             ].map((member, i) => (
               <div className="team-card" key={i}>
                 <div className="team-avatar">
