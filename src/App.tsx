@@ -174,15 +174,17 @@ const styles = `
 
   @media (max-width: 900px) {
     .hero { padding: 40px 20px 60px; }
-    .hero-inner { grid-template-columns: 1fr; gap: 32px; }
-    .hero-desc { padding-right: 0; }
-    .hero-visual { display: flex; transform: scale(0.7); transform-origin: top center; margin-top: 20px; height: 260px; }
+    .hero-inner { grid-template-columns: 1fr; gap: 32px; text-align: center; }
+    .hero-desc { padding-right: 0; margin-left: auto; margin-right: auto; }
+    .hero-actions { justify-content: center; }
+    .hero-visual { display: flex; justify-content: center; transform: scale(0.8); transform-origin: top center; margin-top: 10px; height: 280px; width: 100%; overflow: hidden; }
+    .visual-card { transform: translateX(0); } /* Reset any accidental offset */
     .nav-links { display: none; }
   }
 
   @media (max-width: 480px) {
-    .hero-visual { transform: scale(0.55); transform-origin: top center; margin-top: 10px; height: 200px; }
-    .hero { padding: 20px 16px 40px; }
+    .hero-visual { transform: scale(0.7); height: 240px; margin-top: 0; }
+    .hero { padding: 30px 16px 40px; }
     .hero-title { font-size: 2.2rem; }
   }
 
