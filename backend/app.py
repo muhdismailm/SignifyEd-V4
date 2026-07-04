@@ -1036,7 +1036,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 print("FLASK RUNNING FROM:", BASE_DIR)
 
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:5000")
-AWS_S3_BUCKET_URL = os.environ.get("AWS_S3_BUCKET_URL", "https://signifyed-keypoints-bucket.s3.amazonaws.com")
+AWS_S3_BUCKET_URL = os.environ.get("AWS_S3_BUCKET_URL", "https://signifyedkeypoints.s3.ap-south-1.amazonaws.com")
 
 # ------------------ SAFE NLTK DOWNLOADS ------------------
 
