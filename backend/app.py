@@ -1045,6 +1045,7 @@ def ensure_nltk():
         "corpora/stopwords",
         "corpora/wordnet",
         "tokenizers/punkt",
+        "tokenizers/punkt_tab",
         "taggers/averaged_perceptron_tagger"
     ]
     for resource in resources:
