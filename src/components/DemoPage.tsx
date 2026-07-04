@@ -100,7 +100,8 @@ const styles = `
     .panel { height: auto; overflow: visible; flex: none; }
     .panel-body { overflow: visible; flex: none; gap: 12px; }
     .transcript-box, .gloss-box { min-height: 60px; max-height: none; height: auto; }
-    .avatar-panel { height: 450px; min-height: 450px; flex: none; }
+    .avatar-panel { height: auto; min-height: unset; flex: none; overflow: visible; }
+    .avatar-panel-body { overflow: visible; }
   }
   .panel {
     background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);

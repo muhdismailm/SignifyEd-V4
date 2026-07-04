@@ -176,12 +176,12 @@ const styles = `
     .hero { padding: 40px 20px 60px; }
     .hero-inner { grid-template-columns: 1fr; gap: 32px; }
     .hero-desc { padding-right: 0; }
-    .hero-visual { display: flex; transform: scale(0.85); margin-top: 10px; }
+    .hero-visual { display: flex; transform: scale(0.7); transform-origin: top center; margin-top: 20px; height: 260px; }
     .nav-links { display: none; }
   }
 
   @media (max-width: 480px) {
-    .hero-visual { transform: scale(0.65); margin-top: -20px; }
+    .hero-visual { transform: scale(0.55); transform-origin: top center; margin-top: 10px; height: 200px; }
     .hero { padding: 20px 16px 40px; }
     .hero-title { font-size: 2.2rem; }
   }
