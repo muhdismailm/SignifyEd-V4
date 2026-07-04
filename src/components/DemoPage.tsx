@@ -213,10 +213,8 @@ export default function DemoPage({ onBack, backendUrl }: DemoPageProps) {
       else {
         setTranscript(data.original);
         setGloss(data.isl_gloss || []);
-        if (data.combined_keypoints_url) {
-          const res2   = await fetch(data.combined_keypoints_url);
-          const kpData = await res2.json();
-          setSentenceKeypoints(kpData.sentence_keypoints || []);
+        if (data.combined_keypoints_data) {
+          setSentenceKeypoints(data.combined_keypoints_data.sentence_keypoints || []);
         }
       }
     } catch { setTranscript('Error processing request.'); }
@@ -240,10 +238,8 @@ export default function DemoPage({ onBack, backendUrl }: DemoPageProps) {
         else {
           setTranscript(data.transcript);
           setGloss(data.isl_gloss || []);
-          if (data.combined_keypoints_url) {
-            const res2   = await fetch(data.combined_keypoints_url);
-            const kpData = await res2.json();
-            setSentenceKeypoints(kpData.sentence_keypoints || []);
+          if (data.combined_keypoints_data) {
+            setSentenceKeypoints(data.combined_keypoints_data.sentence_keypoints || []);
           }
         }
       } catch { setTranscript('Video upload failed.'); }

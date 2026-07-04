@@ -2281,8 +2281,8 @@ export default function AvatarViewer({ keypoints, fps = 25 }: Props) {
     }}>
       {/* TAB BAR */}
       <div style={{ display: "flex", borderBottom: "1px solid rgba(99,102,241,0.12)" }}>
-        <button style={tab(activeTab === "avatar")}   onClick={() => setActiveTab("avatar")}>🧍 Avatar</button>
-        <button style={tab(activeTab === "skeleton")} onClick={() => setActiveTab("skeleton")}>🦴 Skeleton</button>
+        <button style={tab(activeTab === "avatar")}   onClick={() => setActiveTab("avatar")}> Avatar</button>
+        <button style={tab(activeTab === "skeleton")} onClick={() => setActiveTab("skeleton")}> Visualiser</button>
       </div>
 
       {/* VIEWER */}
@@ -2317,7 +2317,7 @@ export default function AvatarViewer({ keypoints, fps = 25 }: Props) {
             />
           ) : (
             <div style={{ textAlign: "center", color: "rgba(148,163,184,0.5)" }}>
-              <div style={{ fontSize: 48 }}>🦴</div>
+              {/* <div style={{ fontSize: 48 }}></div> */}
               <div style={{ marginTop: 8 }}>No keypoints loaded yet</div>
             </div>
           )}

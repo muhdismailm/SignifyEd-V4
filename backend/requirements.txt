@@ -1,0 +1,8 @@
+flask
+flask-cors
+werkzeug
+nltk
+openai-whisper
+torch
+gunicorn
+requests
