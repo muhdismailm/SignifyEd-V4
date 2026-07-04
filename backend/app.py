@@ -1046,7 +1046,8 @@ def ensure_nltk():
         "corpora/wordnet",
         "tokenizers/punkt",
         "tokenizers/punkt_tab",
-        "taggers/averaged_perceptron_tagger"
+        "taggers/averaged_perceptron_tagger",
+        "taggers/averaged_perceptron_tagger_eng"
     ]
     for resource in resources:
         try:
