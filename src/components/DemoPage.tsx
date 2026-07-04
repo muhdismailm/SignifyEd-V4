@@ -94,7 +94,11 @@ const styles = `
   }
   @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
   .content-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; overflow: hidden; }
-  @media (max-width: 900px) { .content-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { 
+    .content-grid { grid-template-columns: 1fr; overflow-y: auto; padding-bottom: 40px; }
+    .panel { min-height: 500px; flex: none; }
+    .avatar-panel { min-height: 550px; flex: none; }
+  }
   .panel {
     background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
     border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; position: relative;
