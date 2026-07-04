@@ -173,9 +173,17 @@ const styles = `
   }
 
   @media (max-width: 900px) {
-    .hero-inner { grid-template-columns: 1fr; }
-    .hero-visual { display: none; }
+    .hero { padding: 40px 20px 60px; }
+    .hero-inner { grid-template-columns: 1fr; gap: 32px; }
+    .hero-desc { padding-right: 0; }
+    .hero-visual { display: flex; transform: scale(0.85); margin-top: 10px; }
     .nav-links { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .hero-visual { transform: scale(0.65); margin-top: -20px; }
+    .hero { padding: 20px 16px 40px; }
+    .hero-title { font-size: 2.2rem; }
   }
 
   .hero-badge {

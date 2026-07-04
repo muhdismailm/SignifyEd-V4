@@ -148,7 +148,7 @@ const styles = `
   .upload-btn:disabled{opacity:0.4;cursor:not-allowed}
   .input-row{display:flex;gap:8px}
   .text-input {
-    flex:1; padding:10px 14px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08);
+    flex:1; min-width:0; padding:10px 14px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08);
     border-radius:10px; color:#fff; font-family:'Outfit',sans-serif; font-size:0.9rem; outline:none; transition:border-color 0.2s;
   }
   .text-input::placeholder{color:rgba(180,215,230,0.3)}
