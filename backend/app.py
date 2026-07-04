@@ -1018,7 +1018,6 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus.reader.wordnet import NOUN, VERB, ADJ, ADV
-from seq2seq.inference import generate_gloss
 import csv
 import os
 import traceback
@@ -1389,6 +1388,7 @@ def seq2seq_process():
             return jsonify({"error": "Text field missing"}), 400
         input_text = data.get("text", "").strip()
 
+        from seq2seq.inference import generate_gloss
         gloss      = generate_gloss(input_text)
         gloss_file = save_gloss_to_file(input_text, gloss)
         combined_data, missing = combine_sentence_keypoints(gloss)
