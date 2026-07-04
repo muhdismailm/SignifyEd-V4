@@ -96,12 +96,11 @@ const styles = `
   .content-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; overflow: hidden; }
   @media (max-width: 900px) { 
     .demo-root { height: 100dvh; }
-    .content-grid { grid-template-columns: 1fr; overflow-y: auto; padding: 16px; padding-bottom: 40px; }
-    .panel { min-height: unset; height: auto; flex: none; }
-    .panel-body { padding: 16px; gap: 16px; }
-    .transcript-box { min-height: 80px; max-height: 120px; }
-    .gloss-box { min-height: 80px; max-height: 120px; }
-    .avatar-panel { height: 400px; min-height: unset; flex: none; }
+    .content-grid { display: flex; flex-direction: column; overflow-y: auto; padding: 16px; gap: 20px; }
+    .panel { height: auto; overflow: visible; flex: none; }
+    .panel-body { overflow: visible; flex: none; gap: 12px; }
+    .transcript-box, .gloss-box { min-height: 60px; max-height: none; height: auto; }
+    .avatar-panel { height: 450px; min-height: 450px; flex: none; }
   }
   .panel {
     background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
