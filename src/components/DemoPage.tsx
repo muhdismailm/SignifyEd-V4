@@ -196,6 +196,19 @@ const styles = `
   .spinner{width:52px;height:52px;border:3px solid rgba(0,196,204,0.15);border-top-color:#00c4cc;border-radius:50%;animation:spin 0.8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
   .spinner-label{font-size:0.9rem;font-weight:600;color:rgba(200,230,240,0.7);font-family:'Space Mono',monospace;letter-spacing:0.05em}
+
+  @media (max-width: 480px) {
+    .drawer { width: 85vw; max-width: 280px; padding: 24px 20px; }
+    .topbar { padding: 0 16px; height: 50px; }
+    .content-grid { padding: 12px; gap: 16px; }
+    .panel-body { padding: 16px; gap: 16px; }
+    .input-area { padding: 16px; }
+    .input-row { flex-wrap: wrap; gap: 8px; }
+    .text-input { flex: 1 1 100%; min-height: 44px; }
+    .icon-btn, .send-btn { flex: 1; height: 44px; }
+    .upload-btn { height: 44px; }
+    .avatar-panel { min-height: 300px; }
+  }
 `;
 
 export default function DemoPage({ onBack, backendUrl }: DemoPageProps) {
