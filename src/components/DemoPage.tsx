@@ -1,6 +1,6 @@
 
 
-import { Suspense, useState } from 'react';
+import { Suspense, useRef, useState } from 'react';
 import { Home, Upload, Mic, Send, BookOpen, Menu, X } from 'lucide-react';
 import React from 'react';
 // import AvatarViewer from './AvatarViewer';
@@ -20,6 +20,86 @@ export interface DemoPageProps {
 
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
+
+type MalayalamAudioCapture = {
+  audioContext: AudioContext;
+  source: MediaStreamAudioSourceNode;
+  processor: ScriptProcessorNode;
+  silentGain: GainNode;
+  stream: MediaStream;
+  chunks: Float32Array[];
+};
+
+const SARVAM_SAMPLE_RATE = 16_000;
+
+function mergeAudioChunks(chunks: Float32Array[]) {
+  const totalLength = chunks.reduce((total, chunk) => total + chunk.length, 0);
+  const merged = new Float32Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return merged;
+}
+
+function resampleAudio(samples: Float32Array, inputRate: number, outputRate: number) {
+  if (inputRate === outputRate) return samples;
+
+  const ratio = inputRate / outputRate;
+  const outputLength = Math.round(samples.length / ratio);
+  const output = new Float32Array(outputLength);
+  let inputOffset = 0;
+
+  for (let outputOffset = 0; outputOffset < outputLength; outputOffset += 1) {
+    const nextInputOffset = Math.min(Math.round((outputOffset + 1) * ratio), samples.length);
+    let sum = 0;
+    let count = 0;
+    for (; inputOffset < nextInputOffset; inputOffset += 1) {
+      sum += samples[inputOffset];
+      count += 1;
+    }
+    output[outputOffset] = count ? sum / count : 0;
+  }
+  return output;
+}
+
+function encodeWav(samples: Float32Array, sampleRate: number) {
+  const wav = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(wav);
+  const writeText = (offset: number, value: string) => {
+    for (let index = 0; index < value.length; index += 1) {
+      view.setUint8(offset + index, value.charCodeAt(index));
+    }
+  };
+
+  writeText(0, 'RIFF');
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeText(8, 'WAVE');
+  writeText(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeText(36, 'data');
+  view.setUint32(40, samples.length * 2, true);
+
+  for (let index = 0; index < samples.length; index += 1) {
+    const sample = Math.max(-1, Math.min(1, samples[index]));
+    view.setInt16(44 + index * 2, sample * 0x7fff, true);
+  }
+  return new Blob([wav], { type: 'audio/wav' });
+}
+
+function getAudioLevel(samples: Float32Array) {
+  if (!samples.length) return 0;
+  let total = 0;
+  for (const sample of samples) total += sample * sample;
+  return Math.sqrt(total / samples.length);
+}
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
@@ -148,6 +228,11 @@ const styles = `
   .upload-btn:hover:not(:disabled){background:rgba(0,196,204,0.1);border-color:rgba(0,196,204,0.5);color:#00c4cc}
   .upload-btn:disabled{opacity:0.4;cursor:not-allowed}
   .input-row{display:flex;gap:8px}
+  .language-select {
+    width: 118px; padding: 10px 8px; background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: #c8e6f0;
+    font-family: 'Outfit', sans-serif; font-size: 0.78rem; outline: none;
+  }
   .text-input {
     flex:1; min-width:0; padding:10px 14px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08);
     border-radius:10px; color:#fff; font-family:'Outfit',sans-serif; font-size:0.9rem; outline:none; transition:border-color 0.2s;
@@ -215,24 +300,31 @@ export default function DemoPage({ onBack, backendUrl }: DemoPageProps) {
   const [isDrawerOpen, setIsDrawerOpen]           = useState(false);
   const [message, setMessage]                     = useState('');
   const [isRecording, setIsRecording]             = useState(false);
+  const [voiceLanguage, setVoiceLanguage]         = useState<'english' | 'malayalam'>('english');
   const [isProcessing, setIsProcessing]           = useState(false);
   const [transcript, setTranscript]               = useState('');
   const [gloss, setGloss]                         = useState<string[]>([]);
   const [sentenceKeypoints, setSentenceKeypoints] = useState<any[]>([]);
+  const recognitionRef = useRef<any>(null);
+  const malayalamAudioRef = useRef<MalayalamAudioCapture | null>(null);
+  const transcriptionTimerRef = useRef<number | null>(null);
+  const maximumRecordingTimerRef = useRef<number | null>(null);
+  const isTranscribingAudioRef = useRef(false);
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
     setIsProcessing(true);
     setGloss([]); setTranscript(''); setSentenceKeypoints([]);
     try {
-      const res  = await fetch(`${backendUrl}/process`, {
+      const isMalayalam = voiceLanguage === 'malayalam';
+      const res  = await fetch(`${backendUrl}/${isMalayalam ? 'process_malayalam_text' : 'process'}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: message }),
       });
       const data = await res.json();
       if (data.error) { setTranscript(data.error); }
       else {
-        setTranscript(data.original);
+        setTranscript(data.english_translation || data.original);
         setGloss(data.isl_gloss || []);
         if (data.combined_keypoints_data) {
           setSentenceKeypoints(data.combined_keypoints_data.sentence_keypoints || []);
@@ -269,15 +361,151 @@ export default function DemoPage({ onBack, backendUrl }: DemoPageProps) {
     input.click();
   };
 
-  const toggleRecording = () => {
+  const toggleEnglishLiveRecognition = () => {
     if (!SpeechRecognition) { alert('Speech recognition not supported.'); return; }
+
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      return;
+    }
+
     const recognition = new SpeechRecognition();
-    recognition.lang  = 'en-US';
+    recognition.lang = 'en-US';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognitionRef.current = recognition;
     setIsRecording(true);
     recognition.start();
-    recognition.onresult = (event: any) => { setMessage(event.results[0][0].transcript); setIsRecording(false); };
-    recognition.onerror  = () => setIsRecording(false);
-    recognition.onend    = () => setIsRecording(false);
+    recognition.onresult = (event: any) => {
+      let finalText = '';
+      let interimText = '';
+      for (let index = 0; index < event.results.length; index += 1) {
+        const text = event.results[index][0].transcript;
+        if (event.results[index].isFinal) finalText += `${text} `;
+        else interimText += `${text} `;
+      }
+      setMessage(`${finalText}${interimText}`.trim());
+    };
+    recognition.onerror = (event: any) => {
+      if (event.error !== 'aborted') alert(`Speech recognition failed: ${event.error}`);
+    };
+    recognition.onend = () => {
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
+      setIsRecording(false);
+    };
+  };
+
+  const transcribeCurrentMalayalamAudio = async (capture: MalayalamAudioCapture, showError: boolean) => {
+    if (isTranscribingAudioRef.current || capture.chunks.length === 0) return;
+
+    const samples = mergeAudioChunks(capture.chunks);
+    const pcm = resampleAudio(samples, capture.audioContext.sampleRate, SARVAM_SAMPLE_RATE);
+    // Very short recordings are mostly microphone start-up noise, not speech.
+    if (pcm.length < SARVAM_SAMPLE_RATE) return;
+    if (getAudioLevel(pcm) < 0.0015) {
+      if (showError) {
+        setTranscript('No sound was captured. Select your physical microphone in browser settings, then record again.');
+      }
+      return;
+    }
+
+    isTranscribingAudioRef.current = true;
+    try {
+      const formData = new FormData();
+      formData.append('audio', encodeWav(pcm, SARVAM_SAMPLE_RATE), 'malayalam-recording.wav');
+      const response = await fetch(`${backendUrl}/transcribe_malayalam_audio`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        if (showError) setTranscript(data.error || 'Malayalam transcription failed.');
+        return;
+      }
+      if (data.transcript) {
+        setMessage(data.transcript);
+        setTranscript('Malayalam speech detected. Review the text, then press Send.');
+      }
+    } catch {
+      if (showError) setTranscript('Could not reach the Malayalam transcription service.');
+    } finally {
+      isTranscribingAudioRef.current = false;
+    }
+  };
+
+  const stopMalayalamSarvamRecording = async () => {
+    const capture = malayalamAudioRef.current;
+    if (!capture) return;
+
+    if (transcriptionTimerRef.current !== null) window.clearInterval(transcriptionTimerRef.current);
+    if (maximumRecordingTimerRef.current !== null) window.clearTimeout(maximumRecordingTimerRef.current);
+    transcriptionTimerRef.current = null;
+    maximumRecordingTimerRef.current = null;
+    malayalamAudioRef.current = null;
+    capture.processor.onaudioprocess = null;
+    capture.source.disconnect();
+    capture.processor.disconnect();
+    capture.silentGain.disconnect();
+    capture.stream.getTracks().forEach((track) => track.stop());
+    setIsRecording(false);
+
+    await transcribeCurrentMalayalamAudio(capture, true);
+    await capture.audioContext.close();
+  };
+
+  const startMalayalamSarvamRecording = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      alert('This browser cannot record microphone audio. Please use Chrome or Edge.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+      });
+      const AudioContextConstructor = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextConstructor) throw new Error('Web Audio is not supported');
+
+      const audioContext = new AudioContextConstructor();
+      await audioContext.resume();
+      const source = audioContext.createMediaStreamSource(stream);
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      const silentGain = audioContext.createGain();
+      silentGain.gain.value = 0;
+      const capture: MalayalamAudioCapture = {
+        audioContext, source, processor, silentGain, stream, chunks: [],
+      };
+
+      processor.onaudioprocess = (event) => {
+        capture.chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+      };
+      source.connect(processor);
+      processor.connect(silentGain);
+      silentGain.connect(audioContext.destination);
+      malayalamAudioRef.current = capture;
+      setMessage('');
+      setTranscript('Listening in Malayalam… recognised text will appear in the input field.');
+      setIsRecording(true);
+
+      transcriptionTimerRef.current = window.setInterval(() => {
+        void transcribeCurrentMalayalamAudio(capture, false);
+      }, 3_500);
+      // Sarvam's REST endpoint is intended for audio clips up to 30 seconds.
+      maximumRecordingTimerRef.current = window.setTimeout(() => {
+        void stopMalayalamSarvamRecording();
+      }, 25_000);
+    } catch {
+      alert('Microphone access is required for Malayalam speech input.');
+    }
+  };
+
+  const toggleRecording = () => {
+    if (voiceLanguage === 'malayalam') {
+      if (malayalamAudioRef.current) void stopMalayalamSarvamRecording();
+      else void startMalayalamSarvamRecording();
+      return;
+    }
+    toggleEnglishLiveRecognition();
   };
 
   return (
@@ -333,16 +561,26 @@ export default function DemoPage({ onBack, backendUrl }: DemoPageProps) {
                   <Upload size={16} /> Upload Video
                 </button>
                 <div className="input-row">
+                  <select
+                    className="language-select"
+                    value={voiceLanguage}
+                    onChange={(e) => setVoiceLanguage(e.target.value as 'english' | 'malayalam')}
+                    disabled={isRecording || isProcessing}
+                    aria-label="Input language"
+                  >
+                    <option value="english">English input</option>
+                    <option value="malayalam">Malayalam input</option>
+                  </select>
                   <input
                     className="text-input" type="text" value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Type text to convert to ISL…" disabled={isProcessing}
+                    placeholder={voiceLanguage === 'malayalam' ? 'മലയാളത്തിൽ ടൈപ്പ് ചെയ്യുക…' : 'Type text to convert to ISL…'} disabled={isProcessing}
                   />
-                  <button className={`icon-btn ${isRecording ? 'recording' : ''}`} onClick={toggleRecording}>
+                  <button className={`icon-btn ${isRecording ? 'recording' : ''}`} onClick={toggleRecording} disabled={isProcessing} title={isRecording ? 'Stop recording' : voiceLanguage === 'malayalam' ? 'Start Sarvam Malayalam transcription' : 'Start English speech recognition'}>
                     <Mic size={16} />
                   </button>
-                  <button className="send-btn" onClick={handleSendMessage} disabled={!message.trim() || isProcessing}>
+                  <button className="send-btn" onClick={handleSendMessage} disabled={!message.trim() || isProcessing || isRecording}>
                     <Send size={16} />
                   </button>
                 </div>

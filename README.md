@@ -56,9 +56,21 @@ python -m venv .venv
 .venv\Scripts\activate   # (Windows)
 # source .venv/bin/activate # (Mac/Linux)
 pip install -r requirements.txt
+# Set SARVAM_API_KEY to enable Malayalam microphone input.
+# PowerShell: $env:SARVAM_API_KEY = "your_sarvam_api_key"
 python app.py
 ```
 *Runs on http://localhost:5000*
+
+### Malayalam voice input
+
+Choose **Malayalam input** in the demo, then either type Malayalam or use the
+microphone. While recording, the browser captures PCM audio locally and sends short
+snapshots to the backend; Sarvam returns Malayalam text into the input field. Stop
+recording, review or edit that text, and select Send. Sarvam then translates it to
+English before the existing ISL gloss and avatar pipeline runs. Configure a
+`SARVAM_API_KEY` environment variable; `backend/.env.example` lists the deployment
+variables but is not loaded automatically by `python app.py`.
 
 ## 🎨 Design & Aesthetics
 SignifyEd was built with a premium, dynamic interface. It features glassmorphism, smooth micro-animations, curated color palettes, and responsive grids that adapt perfectly to mobile screens.
